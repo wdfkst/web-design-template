@@ -1348,7 +1348,7 @@ Co-Authored-By: Claude Code <noreply@anthropic.com>"
 
 - [ ] **Step 1: 写失败测试**
 
-`packages/templates/blocks/src/__tests__/draft.test.ts`，把 `landingDraft` 与它下面的两个 helper 区域（原第 33-65 行）整体替换为：
+`packages/templates/blocks/src/__tests__/draft.test.ts`，把 `landingDraft` 那一段（原第 33-55 行：文档注释 + `landingDraft`）整体替换为 `contentBlock` / `homePage` / `fillerPage` / 新的 `landingDraft`。**`okValue` 与 `failureOf`（原第 57-65 行）在它下面，保留不动** —— 下面新加的闸测试要用它们：
 
 ```ts
 /**
@@ -1408,7 +1408,7 @@ function landingDraft(pages?: unknown): Record<string, unknown> {
 
 ```ts
         landingDraft([
-          homePage([contentBlock('HeroSplit')]),
+          homePage([contentBlock('HeroSplit'), contentBlock('StatsBand')]),
           fillerPage('/about', 'About'),
           fillerPage('/pricing', 'Pricing'),
         ]),
@@ -1417,7 +1417,10 @@ function landingDraft(pages?: unknown): Record<string, unknown> {
 - `names the declared slots when the draft invents one` 与 `names the available components when the draft picks an unknown one`：同样把单页参数换成 `[homePage([...]), fillerPage('/about', 'About'), fillerPage('/pricing', 'Pricing')]`，其中第一项分别是
 
 ```ts
-          homePage([contentBlock('HeroSplit', undefined, { banner: { prompt: 'anything' } })]),
+          homePage([
+            contentBlock('HeroSplit', undefined, { banner: { prompt: 'anything' } }),
+            contentBlock('StatsBand'),
+          ]),
 ```
 ```ts
           homePage([contentBlock('MadeUpBlock'), contentBlock('StatsBand')]),
