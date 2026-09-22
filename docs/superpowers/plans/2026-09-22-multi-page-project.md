@@ -915,7 +915,7 @@ describe('deriveSpecInput gate: cross-page targets', () => {
         title: 'Home',
         pageType: 'landing',
         blocks: [
-          { component: 'HeroSplit', props: { primaryCta: { label: 'Pricing', to: '/pricing' } } },
+          { component: 'HeroSplit', props: { primaryCta: { label: 'Enterprise', to: '/enterprise' } } },
           { component: 'StatsBand' },
         ],
       },
@@ -923,7 +923,7 @@ describe('deriveSpecInput gate: cross-page targets', () => {
       { route: '/pricing', title: 'Pricing', pageType: 'landing', blocks: [{ component: 'StatsBand' }, { component: 'TestimonialRow' }] },
     ])
 
-    expect(failureOf(deriveSpecInput(draft))).toMatch(/\/pricing.*not a declared route/)
+    expect(failureOf(deriveSpecInput(draft))).toMatch(/\/enterprise.*not a declared route/)
   })
 
   it('accepts a CTA that names a declared route', () => {
