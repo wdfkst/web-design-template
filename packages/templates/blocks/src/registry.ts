@@ -7,6 +7,7 @@ import { CtaBanner } from './blocks/cta-banner.slots.js'
 import { FooterSimple } from './blocks/footer-simple.slots.js'
 import { EmptyStatePanel } from './blocks/empty-state-panel.slots.js'
 import { StatsBand } from './blocks/stats-band.slots.js'
+import { LogoStrip } from './blocks/logo-strip.slots.js'
 
 const definitions: readonly BlockDefinition[] = [
   NavBarSimple,
@@ -17,6 +18,7 @@ const definitions: readonly BlockDefinition[] = [
   FooterSimple,
   EmptyStatePanel,
   StatsBand,
+  LogoStrip,
 ]
 
 export const BLOCK_REGISTRY: ReadonlyMap<string, BlockDefinition> = new Map(
@@ -49,4 +51,5 @@ export {
   FooterSimple,
   EmptyStatePanel,
   StatsBand,
+  LogoStrip,
 }
