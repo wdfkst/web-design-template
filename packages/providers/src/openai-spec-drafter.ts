@@ -197,6 +197,18 @@ export function createOpenAISpecDrafter(options: OpenAISpecDrafterOptions): Spec
       try {
         return JSON.parse(content)
       } catch {
+        // Some relays pass the model's answer through even when the model
+        // wrapped it in markdown fences (the prompt forbids this, but the
+        // schema gate would rather repair than lose the whole draft). Trim a
+        // single enclosing ```lang ... ``` block, then retry the parse.
+        const fenced = content.match(/^\s*```[^\n]*\n([\s\S]*?)\n```\s*$/)
+        if (fenced) {
+          try {
+            return JSON.parse(fenced[1]!)
+          } catch {
+            // fall through
+          }
+        }
         return content
       }
     },

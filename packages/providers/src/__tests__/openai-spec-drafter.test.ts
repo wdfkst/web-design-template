@@ -268,6 +268,23 @@ describe('createOpenAISpecDrafter', () => {
     expect(raw).toBe('sorry, I cannot do that')
   })
 
+  test('unwraps a markdown-fenced json block a relay may pass through', async () => {
+    const payload = { meta: { name: 'Acme', description: 'x', targetStack: 'vue3' } }
+    const { drafter } = drafterWith(chatReply("```json\n" + JSON.stringify(payload) + "\n```"))
+
+    const raw = await drafter.draft({ description: 'x', attempt: 1 })
+
+    expect(raw).toEqual(payload)
+  })
+
+  test('still returns the raw string when fenced content is not json', async () => {
+    const { drafter } = drafterWith(chatReply('```json\nnot really json\n```'))
+
+    const raw = await drafter.draft({ description: 'x', attempt: 1 })
+
+    expect(raw).toBe('```json\nnot really json\n```')
+  })
+
   test('does not leak the api key into the thrown message', async () => {
     const { drafter } = drafterWith({ error: { message: 'bad key' } }, 401)
 
