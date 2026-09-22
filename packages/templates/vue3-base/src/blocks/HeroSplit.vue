@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import type { SlotAssets } from '../asset'
 
+interface Cta {
+  label: string
+  to: string
+}
+
 withDefaults(
   defineProps<{
     headline?: string
     subhead?: string
-    primaryCta?: string
-    secondaryCta?: string
+    primaryCta?: Cta
+    secondaryCta?: Cta
     assets?: SlotAssets
   }>(),
-  { headline: '', subhead: '', primaryCta: '', secondaryCta: '', assets: () => ({}) },
+  { headline: '', subhead: '', assets: () => ({}) },
 )
 </script>
 
@@ -20,10 +25,12 @@ withDefaults(
         <h1>{{ headline }}</h1>
         <p class="hero__subhead">{{ subhead }}</p>
         <div class="hero__actions">
-          <a v-if="primaryCta" class="button" href="#cta">{{ primaryCta }}</a>
-          <a v-if="secondaryCta" class="button button--ghost" href="#features">
-            {{ secondaryCta }}
-          </a>
+          <router-link v-if="primaryCta" class="button" :to="primaryCta.to">
+            {{ primaryCta.label }}
+          </router-link>
+          <router-link v-if="secondaryCta" class="button button--ghost" :to="secondaryCta.to">
+            {{ secondaryCta.label }}
+          </router-link>
         </div>
       </div>
       <!-- geometry mirrors HeroSplit.slots.ts: illustration 4:3 960x720 -->

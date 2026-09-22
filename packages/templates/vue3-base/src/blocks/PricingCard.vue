@@ -1,11 +1,16 @@
 <script setup lang="ts">
+interface Cta {
+  label: string
+  to: string
+}
+
 interface Plan {
   name: string
   price: string
   period?: string
   tagline?: string
   features: string[]
-  ctaLabel?: string
+  cta?: Cta
   featured?: boolean
 }
 
@@ -45,12 +50,12 @@ withDefaults(
               {{ feature }}
             </li>
           </ul>
-          <a
-            v-if="plan.ctaLabel"
-            href="#pricing"
+          <router-link
+            v-if="plan.cta"
+            :to="plan.cta.to"
             class="button"
             :class="{ 'button--ghost': !plan.featured }"
-          >{{ plan.ctaLabel }}</a>
+          >{{ plan.cta.label }}</router-link>
         </article>
       </div>
       <p v-if="note" class="pricing__note">{{ note }}</p>

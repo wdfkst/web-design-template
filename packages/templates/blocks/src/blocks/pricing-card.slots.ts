@@ -6,7 +6,7 @@ export const PricingCard: BlockDefinition = {
   props: {
     heading: 'string',
     subheading: 'string',
-    plans: '{ name, price, period?, tagline?, features: string[], ctaLabel?, featured? }[]',
+    plans: '{ name, price, period?, tagline?, features: string[], cta?: { label, to }, featured? }[]',
     note: 'string',
   },
   slots: [],

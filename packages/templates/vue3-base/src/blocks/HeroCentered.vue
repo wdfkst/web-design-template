@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import type { SlotAssets } from '../asset'
 
+interface Cta {
+  label: string
+  to: string
+}
+
 withDefaults(
   defineProps<{
     headline?: string
     subhead?: string
-    primaryCta?: string
+    primaryCta?: Cta
     assets?: SlotAssets
   }>(),
-  { headline: '', subhead: '', primaryCta: '', assets: () => ({}) },
+  { headline: '', subhead: '', assets: () => ({}) },
 )
 </script>
 
@@ -28,7 +33,9 @@ withDefaults(
     <div class="container hero-centered__copy">
       <h1>{{ headline }}</h1>
       <p class="hero-centered__subhead">{{ subhead }}</p>
-      <a v-if="primaryCta" class="button" href="#cta">{{ primaryCta }}</a>
+      <router-link v-if="primaryCta" class="button" :to="primaryCta.to">
+        {{ primaryCta.label }}
+      </router-link>
     </div>
   </section>
 </template>

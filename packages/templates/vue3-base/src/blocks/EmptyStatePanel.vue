@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import type { SlotAssets } from '../asset'
 
+interface Cta {
+  label: string
+  to: string
+}
+
 withDefaults(
   defineProps<{
     headline?: string
     body?: string
-    ctaLabel?: string
+    cta?: Cta
     assets?: SlotAssets
   }>(),
-  { headline: '', body: '', ctaLabel: '', assets: () => ({}) },
+  { headline: '', body: '', assets: () => ({}) },
 )
 </script>
 
@@ -28,7 +33,7 @@ withDefaults(
     </div>
     <h3>{{ headline }}</h3>
     <p>{{ body }}</p>
-    <button v-if="ctaLabel" class="button" type="button">{{ ctaLabel }}</button>
+    <router-link v-if="cta" class="button" :to="cta.to">{{ cta.label }}</router-link>
   </div>
 </template>
 

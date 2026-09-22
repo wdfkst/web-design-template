@@ -7,7 +7,7 @@ import type { BlockDefinition } from '../slot.js'
 export const CtaBanner: BlockDefinition = {
   component: 'CtaBanner',
   pageTypes: ['landing'],
-  props: { headline: 'string', body: 'string', ctaLabel: 'string' },
+  props: { headline: 'string', body: 'string', cta: '{ label, to }' },
   slots: [
     {
       name: 'decoration',

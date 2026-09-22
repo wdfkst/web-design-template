@@ -8,20 +8,31 @@ withDefaults(
   defineProps<{
     brand?: string
     links?: NavLink[]
-    ctaLabel?: string
+    cta?: NavLink
+    orientation?: 'horizontal' | 'vertical'
   }>(),
-  { brand: 'Acme', links: () => [], ctaLabel: '' },
+  { brand: 'Acme', links: () => [], orientation: 'horizontal' },
 )
 </script>
 
 <template>
-  <header class="nav">
+  <header class="nav" :class="`nav--${orientation}`">
     <div class="container nav__inner">
+      <!--
+        The brand is deliberately not a link: the platform cannot promise that a
+        project declares "/", and a brand that points nowhere is the exact defect
+        this file was rewritten to remove.
+      -->
       <span class="nav__brand">{{ brand }}</span>
       <nav class="nav__links">
-        <a v-for="link in links" :key="link.to" :href="link.to">{{ link.label }}</a>
+        <router-link
+          v-for="link in links"
+          :key="link.to"
+          class="nav__link"
+          :to="link.to"
+        >{{ link.label }}</router-link>
       </nav>
-      <a v-if="ctaLabel" class="button" href="#cta">{{ ctaLabel }}</a>
+      <router-link v-if="cta" class="button" :to="cta.to">{{ cta.label }}</router-link>
     </div>
   </header>
 </template>
@@ -51,12 +62,32 @@ withDefaults(
   margin-inline-end: auto;
 }
 
-.nav__links a {
+.nav__link {
   color: var(--color-muted);
   text-decoration: none;
 }
 
-.nav__links a:hover {
+.nav__link:hover,
+.nav__link.router-link-active {
   color: var(--color-foreground);
+}
+
+/* The sidebar shell stacks this same nav down the left edge. */
+.nav--vertical {
+  border-bottom: 0;
+  border-inline-end: 1px solid color-mix(in srgb, var(--color-muted) 25%, transparent);
+  height: 100%;
+}
+
+.nav--vertical .nav__inner {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(var(--space-unit) * 1.5);
+  padding-block: calc(var(--space-unit) * 2);
+}
+
+.nav--vertical .nav__links {
+  flex-direction: column;
+  margin-inline-end: 0;
 }
 </style>

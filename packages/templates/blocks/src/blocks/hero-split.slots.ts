@@ -8,7 +8,7 @@ import type { BlockDefinition } from '../slot.js'
 export const HeroSplit: BlockDefinition = {
   component: 'HeroSplit',
   pageTypes: ['landing'],
-  props: { headline: 'string', subhead: 'string', primaryCta: 'string', secondaryCta: 'string' },
+  props: { headline: 'string', subhead: 'string', primaryCta: '{ label, to }', secondaryCta: '{ label, to }' },
   slots: [
     {
       name: 'illustration',

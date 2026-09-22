@@ -7,7 +7,7 @@ import type { BlockDefinition } from '../slot.js'
 export const HeroCentered: BlockDefinition = {
   component: 'HeroCentered',
   pageTypes: ['landing', 'auth'],
-  props: { headline: 'string', subhead: 'string', primaryCta: 'string' },
+  props: { headline: 'string', subhead: 'string', primaryCta: '{ label, to }' },
   slots: [
     {
       name: 'backdrop',

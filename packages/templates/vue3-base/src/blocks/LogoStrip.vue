@@ -1,13 +1,8 @@
 <script setup lang="ts">
-interface Logo {
-  name: string
-  to: string
-}
-
 withDefaults(
   defineProps<{
     heading?: string
-    logos?: Logo[]
+    logos?: string[]
   }>(),
   { heading: '', logos: () => [] },
 )
@@ -17,13 +12,12 @@ withDefaults(
   <section class="section logos">
     <div class="container">
       <p v-if="heading" class="logos__heading">{{ heading }}</p>
+      <!--
+        Names only, no links. The product is fictional, so any domain the model
+        writes is invented — and an invented domain is worse than no link at all.
+      -->
       <div v-if="logos.length > 0" class="logos__row">
-        <a
-          v-for="(logo, index) in logos"
-          :key="index"
-          :href="logo.to"
-          class="logos__item"
-        >{{ logo.name }}</a>
+        <span v-for="(name, index) in logos" :key="index" class="logos__item">{{ name }}</span>
       </div>
     </div>
   </section>
@@ -52,13 +46,6 @@ withDefaults(
   font-family: var(--font-heading);
   font-weight: 700;
   font-size: 1.125rem;
-  text-decoration: none;
   opacity: 0.75;
-  transition: opacity 0.15s ease;
-}
-
-.logos__item:hover {
-  opacity: 1;
-  color: var(--color-foreground);
 }
 </style>

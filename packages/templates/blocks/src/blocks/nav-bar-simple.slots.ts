@@ -4,6 +4,11 @@ import type { BlockDefinition } from '../slot.js'
 export const NavBarSimple: BlockDefinition = {
   component: 'NavBarSimple',
   pageTypes: ['landing', 'dashboard', 'form', 'list-detail', 'settings'],
-  props: { brand: 'string', links: '{ label, to }[]', ctaLabel: 'string' },
+  props: {
+    brand: 'string',
+    links: '{ label, to }[]',
+    cta: '{ label, to }',
+    orientation: '"horizontal" | "vertical"',
+  },
   slots: [],
 }

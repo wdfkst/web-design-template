@@ -4,7 +4,7 @@ import type { BlockDefinition } from '../slot.js'
 export const EmptyStatePanel: BlockDefinition = {
   component: 'EmptyStatePanel',
   pageTypes: ['dashboard', 'list-detail'],
-  props: { headline: 'string', body: 'string', ctaLabel: 'string' },
+  props: { headline: 'string', body: 'string', cta: '{ label, to }' },
   slots: [
     {
       name: 'illustration',

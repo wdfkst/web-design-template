@@ -47,7 +47,9 @@ withDefaults(
           </label>
           <button class="button auth__submit" type="submit">{{ submitLabel }}</button>
         </form>
-        <a v-if="altActionLabel" class="auth__alt" href="#auth">{{ altActionLabel }}</a>
+        <button v-if="altActionLabel" class="auth__alt" type="button">
+          {{ altActionLabel }}
+        </button>
         <p v-if="note" class="auth__note">{{ note }}</p>
       </div>
     </div>
