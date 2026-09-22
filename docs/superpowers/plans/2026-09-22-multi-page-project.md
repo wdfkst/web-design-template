@@ -2346,7 +2346,7 @@ Co-Authored-By: Claude Code <noreply@anthropic.com>"
 - [ ] **Step 1: 全仓测试**
 
 Run: `pnpm -r test 2>&1 | tail -n 60`
-Expected: 全绿。基线是 38 文件 / 374 例（providers 47、build 25、spec 13、codegen 37、imagegen 29、blocks 64、server 111、web 48），本次会多出 `sfc-navigation.test.ts`、`layouts.test.ts`、`app.test.ts` 三个文件，例数相应增加。**spec 包的 13 例必须不变** —— 变了就说明 `packages/spec` 被误改了。
+Expected: 全绿。括号里那串是**执行前**的基线（2026-09-22 全仓 38 文件 / 374 例：providers 47、build 25、spec 13、codegen 37、imagegen 29、blocks 64、server 111、web 48）。执行期间 Task 3 与 Task 5 已把 blocks 从 64 涨到 93（无新文件，只是加例），Task 6 会再添 `layouts.test.ts` 与 `app.test.ts`（Task 2 另添 `sfc-navigation.test.ts`），所以总例数必然高于 374 —— **别拿 374 当验收线**。真正要守的是两条：全部绿，且 **spec 包仍是 13 例**（变了就说明 `packages/spec` 被误改了）。
 
 - [ ] **Step 2: 全仓 typecheck**
 
