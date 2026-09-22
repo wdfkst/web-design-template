@@ -1641,6 +1641,8 @@ Co-Authored-By: Claude Code <noreply@anthropic.com>"
 - Modify: `packages/codegen/src/project.ts`
 - Modify: `packages/codegen/src/__tests__/project.test.ts`
 - Modify: `packages/codegen/src/__tests__/fixture.ts`
+- Modify: `packages/codegen/src/__tests__/write.test.ts`
+- Modify: `packages/templates/vue3-base/src/blocks/AuthPanel.vue`
 
 **Interfaces:**
 - Consumes: Task 2 的 `AppShell` / `SidebarShell`（底座路径 `src/layouts/<Shell>.vue`，props 见 Task 2）。
@@ -2133,6 +2135,34 @@ import { renderApp } from './app.js'
 
 > **不要**把 `src/App.vue` 加进 `REPLACED_TEMPLATE_FILES` —— 那个常量是死代码（全仓无消费者），加进去是空操作。`copyTemplate` 先全量拷贝、`generated.files` 再逐个覆盖，App.vue 本来就会被覆盖。
 
+- [ ] **Step 9b: 补 Step 1 加页的两处连带面（预检缺陷 #15、#16）**
+
+两处都不在原 Files 清单里，但都因为 Step 1 给夹具加了 auth 页而变红，且**都不是**你这步引入的逻辑问题。
+
+**(a) `packages/codegen/src/__tests__/write.test.ts:47`** —— `removes the template placeholder page it did not regenerate` 例硬编码了页文件清单：
+
+```ts
+    expect(pages.sort()).toEqual(['HomePage.vue', 'PricingPage.vue'])
+```
+
+改成：
+
+```ts
+    expect(pages.sort()).toEqual(['HomePage.vue', 'PricingPage.vue', 'SigninPage.vue'])
+```
+
+**(b) `packages/templates/vue3-base/src/blocks/AuthPanel.vue:10`** —— 把 `mode?: 'sign-in' | 'sign-up'` 改成 `mode?: string`，并在其上方补注释。**同文件的 sidecar（`packages/templates/blocks/src/blocks/auth-panel.slots.ts`）不要动** —— 它那句 `mode: 'sign-in | sign-up'` 是给模型看的散文提示，而 `sfc-props.test.ts` 只比对**属性名**、不比对类型（它用 `extractPropNames` 抽名字），所以两者不冲突，模型的提示词也不该丢。
+
+```ts
+    // `string`, not 'sign-in' | 'sign-up': the code generator emits page props as
+    // a plain JSON const bound with v-bind, which widens the literal. A union here
+    // would turn one typo in an unvalidated spec prop into a build failure for the
+    // whole generated project. The intended values are documented in the sidecar.
+    mode?: string
+```
+
+> **为什么改组件而不是改生成器。** 三条生成器侧的替代路都比这一行危险：`as const` 会把数组变成 `readonly`，`fields?: Field[]` 立刻不过；把 props 内联进属性正是「props 走 const+v-bind」那条不变量要躲的 HTML 实体陷阱；把 const 标注成组件自身的 props 类型需要 `InstanceType<typeof X>['$props']`，而 `withDefaults` 会让 `$props` 里所有属性变成必填，模型没写的 prop 就报缺字段。全仓只有两个字面量联合属性，另一个（`NavBarSimple.orientation`）的组件是 `layoutOnly`，永远不会出现在 `pages[]` 里，所以这一改就把这条路径封完了。
+
 - [ ] **Step 10: 跑测试确认全绿**
 
 Run: `pnpm --filter @vudt/codegen test && pnpm --filter @vudt/build test && pnpm --filter @vudt/imagegen test && pnpm --filter @vudt/server test`
@@ -2141,7 +2171,7 @@ Expected: PASS。build / imagegen / server 各自有自己的夹具副本，不�
 - [ ] **Step 11: 提交**
 
 ```bash
-git add packages/codegen/src
+git add packages/codegen/src packages/templates/vue3-base/src/blocks/AuthPanel.vue
 git commit -m "feat(codegen): generate a project-level App.vue from the page list
 
 新增 layouts.ts（纯函数：选 shell、导航条目、顶栏 CTA、页脚 note）与 app.ts
@@ -2168,7 +2198,7 @@ prompt 里那句 `Keep the page count and the block count small: 1-3 pages` 加�
 
 **Interfaces:**
 - Consumes: Task 2 的 `BlockDefinition.layoutOnly`（走 `BLOCK_REGISTRY`）。
-- Produces: `renderBlockCatalogue()` 跳过 `layoutOnly` 项；`systemPrompt()` 要求 3-6 页、每页 2-5 块、`title` 2-6 词、`to` 必须是已声明 route。目录行格式仍是 `- <Component> [pages: …] props: … | slots: …`（测试按 `^- <Component>` 断言行首）。
+- Produces: `renderBlockCatalogue()` 跳过 `layoutOnly` 项；`systemPrompt()` 要求 3-6 页、每页 2-5 块、`title` 2-6 词、`to` 必须是已声明 route。目录行格式仍是 `- <Component> [pages: …] props: … | slots: …`（测试按 `^- <Component> [pages: ` 断言行首——目录行的真实格式，见 Step 1）。
 
 - [ ] **Step 1: 写失败测试**
 
@@ -2188,7 +2218,7 @@ import { BLOCK_REGISTRY, listBlockComponents } from '@vudt/blocks'
 
     const system = systemOf(calls[0]!)
     for (const definition of BLOCK_REGISTRY.values()) {
-      const listed = new RegExp(`^- ${definition.component}\\b`, 'm').test(system)
+      const listed = new RegExp(`^- ${definition.component} \\[pages: `, 'm').test(system)
       // Nav and footer are rendered once by the shell, so offering them here
       // would invite the model to put a second one inside a page.
       expect(listed, `${definition.component} layoutOnly=${definition.layoutOnly}`).toBe(
@@ -2390,7 +2420,10 @@ Run: `pnpm --filter @vudt/server dev`（**cwd 必须是仓库根**）
 - [ ] **Step 8: 提交任何手验中发现并修复的缺陷**
 
 ```bash
-git add -A
+# 只暂存已跟踪文件的改动。不要用 `git add -A`：仓库根有两个与本 plan 无关的未跟踪文件
+# （README.md、docs/superpowers/plans/2026-09-22-output-richness.md），-A 会把它们卷进这次提交。
+# 若本次修复新建了文件，单独 `git add <那个文件>`。
+git add -u
 git commit -m "fix: <手验中发现的缺陷>
 
 Co-Authored-By: Claude Code <noreply@anthropic.com>"
