@@ -622,10 +622,11 @@ describe('layout shells', () => {
   })
 
   // Without this the auth page would render the shell it was supposed to escape.
+  // Guarded per chrome element, so a dropped guard fails rather than passing on
+  // the other one: nav + footer in AppShell, the aside alone in SidebarShell.
   it('both shells hide their chrome when the route asks for it', () => {
-    for (const name of ['AppShell', 'SidebarShell']) {
-      expect(readLayout(name)).toContain(':chromeless')
-    }
+    expect(readLayout('AppShell').match(/v-if="!chromeless"/g)).toHaveLength(2)
+    expect(readLayout('SidebarShell').match(/v-if="!chromeless"/g)).toHaveLength(1)
   })
 })
 ```
