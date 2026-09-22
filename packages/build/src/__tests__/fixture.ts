@@ -36,15 +36,24 @@ const styleBible = {
  */
 export function landingSpec(): ProjectSpec {
   const home: BlockSelection[] = [
-    { component: 'NavBarSimple', props: { brand: 'Acme' } },
     {
       component: 'HeroSplit',
       props: {
         headline: 'Ship faster',
         subhead: 'A "quoted" & ampersanded subhead',
-        primaryCta: 'Get started',
+        primaryCta: { label: 'See pricing', to: '/pricing' },
       },
       content: { illustration: { prompt: 'a developer at a desk', alt: 'Developer at a desk' } },
+    },
+    {
+      component: 'StatsBand',
+      props: {
+        heading: 'By the numbers',
+        stats: [
+          { label: 'Users', value: '12k' },
+          { label: 'Uptime', value: '99.9', suffix: '%' },
+        ],
+      },
     },
     {
       component: 'FeatureTriad',
@@ -57,14 +66,26 @@ export function landingSpec(): ProjectSpec {
         ],
       },
     },
-    { component: 'CtaBanner', props: { headline: 'Ready?', cta: 'Start now' } },
-    { component: 'FooterSimple', props: { brand: 'Acme', note: '© 2026' } },
+    { component: 'CtaBanner', props: { headline: 'Ready?', cta: { label: 'Choose a plan', to: '/pricing' } } },
   ]
 
   const pricing: BlockSelection[] = [
-    { component: 'NavBarSimple', props: { brand: 'Acme' } },
     { component: 'HeroCentered', props: { headline: 'Pricing' } },
-    { component: 'FooterSimple', props: { brand: 'Acme' } },
+    {
+      component: 'PricingCard',
+      props: {
+        heading: 'Pick a plan',
+        plans: [
+          {
+            name: 'Pro',
+            price: '$29',
+            features: ['Unlimited projects', 'Priority support'],
+            cta: { label: 'Start with Pro', to: '/' },
+            featured: true,
+          },
+        ],
+      },
+    },
   ]
 
   const homeDerived = derivePageAssets('/', home)

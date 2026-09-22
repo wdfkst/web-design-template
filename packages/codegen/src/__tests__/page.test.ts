@@ -15,7 +15,7 @@ describe('renderPage', () => {
     const sfc = renderPage(spec, homePage(spec))
     const imports = [...sfc.matchAll(/^import (\w+) from '\.\.\/blocks\/(\w+)\.vue'$/gm)]
     const names = imports.map((m) => m[1])
-    expect(names).toEqual(['CtaBanner', 'FeatureTriad', 'FooterSimple', 'HeroSplit', 'NavBarSimple'])
+    expect(names).toEqual(['CtaBanner', 'FeatureTriad', 'HeroSplit', 'StatsBand'])
     expect(new Set(names).size).toBe(names.length)
   })
 
@@ -24,13 +24,7 @@ describe('renderPage', () => {
     const sfc = renderPage(spec, homePage(spec))
     const template = sfc.slice(sfc.indexOf('<template>'))
     const order = [...template.matchAll(/<([A-Z]\w+)/g)].map((m) => m[1])
-    expect(order).toEqual([
-      'NavBarSimple',
-      'HeroSplit',
-      'FeatureTriad',
-      'CtaBanner',
-      'FooterSimple',
-    ])
+    expect(order).toEqual(['HeroSplit', 'StatsBand', 'FeatureTriad', 'CtaBanner'])
   })
 
   it('takes w/h from the sidecar, not from the manifest entry', () => {
@@ -51,11 +45,11 @@ describe('renderPage', () => {
   it('declares an assets const only for blocks that have slots', () => {
     const spec = landingSpec()
     const sfc = renderPage(spec, homePage(spec))
-    // NavBarSimple (index 0) and FooterSimple (index 4) have no slots.
-    expect(sfc).not.toContain('const assets0')
-    expect(sfc).not.toContain('const assets4')
-    expect(sfc).toContain('const assets1: SlotAssets')
+    // StatsBand (index 1) is slotless; the other three each own slot images.
+    expect(sfc).not.toContain('const assets1')
+    expect(sfc).toContain('const assets0: SlotAssets')
     expect(sfc).toContain('const assets2: SlotAssets')
+    expect(sfc).toContain('const assets3: SlotAssets')
   })
 
   it('keeps prop values in the script block, never inline in attributes', () => {
@@ -67,7 +61,7 @@ describe('renderPage', () => {
     expect(sfc).toContain('"subhead": "A \\"quoted\\" & ampersanded subhead"')
     // …and the template only ever references the const, so no HTML entity
     // escaping is needed and vue-tsc sees a plain identifier.
-    expect(template).toContain('v-bind="props1"')
+    expect(template).toContain('v-bind="props0"')
     expect(template).not.toContain('&quot;')
     expect(template).not.toContain('subhead')
   })
@@ -77,25 +71,26 @@ describe('renderPage', () => {
     const sfc = renderPage(spec, homePage(spec))
     expect(sfc).toContain('const props0 = {')
     expect(sfc).toContain('const props1 = {')
-    expect(sfc).not.toContain('const assets0')
+    expect(sfc).not.toContain('const assets1')
   })
 
-  it('omits the SlotAssets import when no block on the page has a slot', () => {
+  it('throws when a page carries a layout component the shell already renders', () => {
     const spec = landingSpec()
-    const bare: ProjectSpec = {
+    const broken: ProjectSpec = {
       ...spec,
       pages: [
         {
           route: '/bare',
           title: 'Bare',
           pageType: 'landing',
-          blocks: [{ component: 'NavBarSimple', props: { brand: 'Acme' }, assetBindings: {} }],
+          blocks: [{ component: 'NavBarSimple', props: {}, assetBindings: {} }],
         },
       ],
     }
-    const sfc = renderPage(bare, bare.pages[0]!)
-    expect(sfc).not.toContain('SlotAssets')
-    expect(sfc).toContain('<NavBarSimple v-bind="props0" />')
+    expect(() => renderPage(broken, broken.pages[0]!)).toThrow(CodegenError)
+    expect(() => renderPage(broken, broken.pages[0]!)).toThrow(
+      /NavBarSimple.*already renders around every page/,
+    )
   })
 })
 

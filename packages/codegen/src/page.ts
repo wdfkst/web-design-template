@@ -89,6 +89,17 @@ export function renderPage(spec: ProjectSpec, page: Page): string {
   let needsSlotAssets = false
 
   for (const [blockIndex, block] of page.blocks.entries()) {
+    // A spec does not have to come from the draft path — a template preset or a
+    // hand-edited spec reaches this function directly. Rendering a nav here would
+    // put a second one under the shell's, reintroducing through the side door the
+    // exact bug the layout work removed.
+    if (getBlockDefinition(block.component)?.layoutOnly === true) {
+      throw new CodegenError(
+        `route "${page.route}" block ${blockIndex} is the layout component "${block.component}",` +
+          ` which App.vue already renders around every page — remove it from pages[].blocks`,
+      )
+    }
+
     const attrs: string[] = []
 
     // Props go into a script const bound with v-bind rather than inline into
