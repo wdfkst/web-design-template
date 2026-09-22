@@ -1169,7 +1169,7 @@ spec 不只来自 draft 路径（模板预设、手写 spec 都走 `renderPage`�
 - [ ] **Step 2: 跑测试确认它红**
 
 Run: `pnpm --filter @vudt/codegen test -- page`
-Expected: FAIL —— 该用例现在渲染出了 `<NavBarSimple v-bind="props0" />` 而不是抛错。
+Expected: FAIL —— 但**不是**下面这种红：本步跑不出「渲染出 `<NavBarSimple v-bind="props0" />`」，因为 Task 3 的闸住在 `derivePageAssets`（`derive.ts:74`），而三个 `landingSpec()` 夹具在 `fixture.ts:70-71` 直接调它 —— 夹具在构造期就抛 `BlockDerivationError`，本文件所有用例都跑不到函数体。此刻的观察是：codegen / build / imagegen 三个包全红（20 / 5 / 10 例），直到 Step 4 改完夹具才可能变绿；那个「渲染出导航」的红要到 Step 4 之后、Step 3 的闸已就位时才可观察。这是「每条实现任务收尾必须全绿」被打破的一次，代价见 ledger 的 defect #7。
 
 - [ ] **Step 3: 在 `renderPage` 里加闸**
 
