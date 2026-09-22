@@ -11,13 +11,19 @@ describe('block registry', () => {
 
   it('exposes the expected component set', () => {
     expect(listBlockComponents()).toEqual([
+      'AuthPanel',
       'CtaBanner',
       'EmptyStatePanel',
+      'FAQAccordion',
       'FeatureTriad',
       'FooterSimple',
       'HeroCentered',
       'HeroSplit',
+      'LogoStrip',
       'NavBarSimple',
+      'PricingCard',
+      'StatsBand',
+      'TestimonialRow',
     ])
   })
 
