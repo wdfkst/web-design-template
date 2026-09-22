@@ -1,0 +1,20 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+.env.local
+
+# 运行时任务工作目录
+workspaces/
+
+# 生成产物缓存
+.cache/
+
+# Server task workspaces and image cache (regenerated per run)
+.vudt/
+
+# Brainstorming visual companion sessions
+.superpowers/
+
+# Playwright MCP browser-session output (console logs, page snapshots, screenshots)
+.playwright-mcp/

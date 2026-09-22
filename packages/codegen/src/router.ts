@@ -1,0 +1,39 @@
+import type { ProjectSpec } from '@vudt/spec'
+import { pageComponentName, routeName } from './naming.js'
+
+/**
+ * Rewrites the template's router.ts with one entry per spec page. The top
+ * comment is left in place so the file still explains what it is.
+ */
+export function renderRouter(spec: ProjectSpec): string {
+  const imports = spec.pages
+    .map((page) => {
+      const name = pageComponentName(page.route)
+      return `import ${name} from './pages/${name}.vue'`
+    })
+    .join('\n')
+
+  const entries = spec.pages
+    .map((page) => {
+      const name = pageComponentName(page.route)
+      return (
+        `  {\n` +
+        `    path: ${JSON.stringify(page.route)},\n` +
+        `    name: ${JSON.stringify(routeName(page.route))},\n` +
+        `    component: ${name},\n` +
+        `  },`
+      )
+    })
+    .join('\n')
+
+  return (
+    `import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'\n` +
+    `${imports}\n\n` +
+    `/**\n` +
+    ` * The generator rewrites this file, one entry per spec page. Hash history keeps\n` +
+    ` * the built dist working inside a preview iframe with no server rewrites.\n` +
+    ` */\n` +
+    `const routes: RouteRecordRaw[] = [\n${entries}\n]\n\n` +
+    `export const router = createRouter({ history: createWebHashHistory(), routes })\n`
+  )
+}

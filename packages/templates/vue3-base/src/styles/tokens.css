@@ -1,0 +1,20 @@
+/*
+ * The generator replaces these values from spec.theme.colorTokens. Every block
+ * reads tokens only — no block hardcodes a color, so a theme change is a
+ * one-file edit.
+ */
+:root {
+  --color-primary: #4f46e5;
+  --color-secondary: #0ea5e9;
+  --color-accent: #f59e0b;
+  --color-background: #ffffff;
+  --color-surface: #f8fafc;
+  --color-foreground: #0f172a;
+  --color-muted: #64748b;
+
+  --radius: 0.5rem;
+  --space-unit: 1rem;
+
+  --font-heading: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+}
