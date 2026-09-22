@@ -1,4 +1,5 @@
 import type { BlockDefinition, SlotSpec } from './slot.js'
+import { AuthPanel } from './blocks/auth-panel.slots.js'
 import { NavBarSimple } from './blocks/nav-bar-simple.slots.js'
 import { HeroSplit } from './blocks/hero-split.slots.js'
 import { HeroCentered } from './blocks/hero-centered.slots.js'
@@ -13,6 +14,7 @@ import { PricingCard } from './blocks/pricing-card.slots.js'
 import { TestimonialRow } from './blocks/testimonial-row.slots.js'
 
 const definitions: readonly BlockDefinition[] = [
+  AuthPanel,
   NavBarSimple,
   HeroSplit,
   HeroCentered,
@@ -49,6 +51,7 @@ export function getSlot(component: string, slotName: string): SlotSpec | undefin
 }
 
 export {
+  AuthPanel,
   NavBarSimple,
   HeroSplit,
   HeroCentered,
