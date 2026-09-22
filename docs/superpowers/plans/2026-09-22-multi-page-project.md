@@ -1343,7 +1343,7 @@ Co-Authored-By: Claude Code <noreply@anthropic.com>"
 **Interfaces:**
 - Consumes: Task 3 的 `assertCtaTargets` 与 layoutOnly 拒绝（都已在 `deriveSpecInput` 里生效）。
 - Produces:
-  - `ProjectDraftSchema`：`pages` 至少 3 项，每页 `blocks` 至少 2 项。feedback 走 `formatIssues`，是路径前缀文本，例如 `pages: Too small…` 与 `pages.0.blocks: Too small…`。
+  - `ProjectDraftSchema`：`pages` 至少 3 项，每页 `blocks` 至少 2 项。feedback 走 `formatIssues`，是路径前缀文本，例如 `pages: Too small…` 与 `pages[0].blocks: Too small…`。
   - `server/src/__tests__/fixture.ts` 的 `landingDraft()` 变成 3 页（首页 + `/about` + `/pricing`）—— `spec-source.test.ts` 里凡覆盖 `draft.pages` 的地方同样必须给够 3 页。
 
 - [ ] **Step 1: 写失败测试**
@@ -1455,7 +1455,7 @@ describe('deriveSpecInput gate: the draft has to be a site, not a page', () => {
       ),
     )
 
-    expect(feedback).toMatch(/^pages\.0\.blocks: /m)
+    expect(feedback).toMatch(/^pages\[0\]\.blocks: /m)
   })
 })
 ```
@@ -1588,7 +1588,7 @@ git commit -m "feat(blocks): require at least three pages with two blocks each
 「完整站点」是 drafter 的契约，不是 spec 容器的契约 —— spec 仍要允许单页，
 模板预设与手改 spec 都用得上它。所以下限钉在 draft schema 上，
 packages/spec 零改动。zod 的 feedback 自带路径前缀（pages: 与
-pages.0.blocks:），可以直接喂回重试回路。
+pages[0].blocks:），可以直接喂回重试回路。
 
 连带：server 的 landingDraft() 与 draft.test.ts 的 6 处单页覆盖都改成 3 页，
 否则它们会先在 shape 闸上失败，而不是走到各自要断言的逻辑。
