@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ProjectSpecInputSchema } from '@vudt/spec'
 import { BlockDerivationError, derivePageAssets, mergeDerivedAssets } from '../derive.js'
-import { HeroSplit } from '../registry.js'
+import { HeroSplit, StatsBand } from '../registry.js'
 
 const landing = [
   { component: 'NavBarSimple' },
@@ -116,6 +116,18 @@ describe('mergeDerivedAssets', () => {
   it('rejects colliding ids', () => {
     const page = derivePageAssets('/', [{ component: 'HeroSplit' }])
     expect(() => mergeDerivedAssets([page, page])).toThrow(/duplicate derived asset id/)
+  })
+
+  it('derives no assets for the new slotless StatsBand', () => {
+    const { blocks, assets } = derivePageAssets('/', [
+      { component: 'NavBarSimple' },
+      { component: 'StatsBand', props: { heading: 'By the numbers', stats: [{ label: 'Users', value: '12k' }] } },
+    ])
+    expect(assets).toHaveLength(0)
+    expect(blocks[1]!.props).toEqual({
+      heading: 'By the numbers',
+      stats: [{ label: 'Users', value: '12k' }],
+    })
   })
 })
 
