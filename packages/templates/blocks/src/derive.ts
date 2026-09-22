@@ -66,6 +66,19 @@ export function derivePageAssets(
       )
     }
 
+    // A layout is rendered once by the app shell, not per page. Letting one into
+    // `pages[].blocks` would put a second nav on the page — the bug this contract
+    // exists to prevent. It is its own case rather than folded into "unknown
+    // component" because that message sends the model looking for a replacement
+    // block instead of deleting the one it should never have picked.
+    if (definition.layoutOnly === true) {
+      throw new BlockDerivationError(
+        `block "${definition.component}" on route "${route}" is a project-level layout,` +
+          ` not a page block: the app shell already renders it once around every page.` +
+          ` Remove it from pages[].blocks.`,
+      )
+    }
+
     const content = selection.content ?? {}
     for (const slotName of Object.keys(content)) {
       if (!definition.slots.some((slot) => slot.name === slotName)) {
@@ -115,4 +128,71 @@ export function mergeDerivedAssets(parts: readonly DerivedPageAssets[]): AssetIn
     }
   }
   return [...byId.values()]
+}
+
+interface FoundTarget {
+  /** Dotted path inside the component's props, for the retry prompt. */
+  path: string
+  value: unknown
+}
+
+/**
+ * Walks a prop tree collecting every value stored under a `to` key. Nested
+ * shapes count: `plans[].cta.to` is as much a destination as `primaryCta.to`.
+ */
+function collectTargets(value: unknown, path: string, found: FoundTarget[]): void {
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => collectTargets(item, `${path}[${index}]`, found))
+    return
+  }
+  if (value === null || typeof value !== 'object') return
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    const childPath = `${path}.${key}`
+    if (key === 'to') {
+      found.push({ path: childPath, value: child })
+      continue
+    }
+    collectTargets(child, childPath, found)
+  }
+}
+
+/**
+ * A prop named `to` is a destination inside this project, and the only thing a
+ * destination can name is a route some page declared. The convention is total on
+ * purpose: a new block cannot forget to declare that one of its props is a
+ * route, because there is nothing to declare.
+ *
+ * Anchors are rejected outright. With hash history an `#id` link cannot reach
+ * another page, and "the click did nothing" is the exact symptom this exists to
+ * remove.
+ */
+export function assertCtaTargets(
+  route: string,
+  selections: readonly BlockSelection[],
+  routes: ReadonlySet<string>,
+): void {
+  for (const selection of selections) {
+    const found: FoundTarget[] = []
+    collectTargets(selection.props ?? {}, selection.component, found)
+
+    for (const { path, value } of found) {
+      if (typeof value !== 'string' || value === '') {
+        throw new BlockDerivationError(
+          `${route}: ${path} must be a string route naming a declared page`,
+        )
+      }
+      if (value.startsWith('#')) {
+        throw new BlockDerivationError(
+          `${route}: ${path} is the anchor "${value}", and an anchor cannot reach another page.` +
+            ` Use the route of a page declared in "pages" instead.`,
+        )
+      }
+      if (!routes.has(value)) {
+        throw new BlockDerivationError(
+          `${route}: ${path} points at "${value}", which is not a declared route` +
+            ` (declared: ${[...routes].join(', ')})`,
+        )
+      }
+    }
+  }
 }

@@ -69,8 +69,8 @@ describe('draftSpec', () => {
     // asset ids first and this would stop proving gate 2 does anything.
     const draft = landingDraft() as { pages: unknown[] }
     draft.pages = [
-      { route: '/', title: 'Home', pageType: 'landing', blocks: [{ component: 'NavBarSimple' }] },
-      { route: '/', title: 'Home again', pageType: 'landing', blocks: [{ component: 'NavBarSimple' }] },
+      { route: '/', title: 'Home', pageType: 'landing', blocks: [{ component: 'StatsBand' }] },
+      { route: '/', title: 'Home again', pageType: 'landing', blocks: [{ component: 'StatsBand' }] },
     ]
 
     let caught: unknown

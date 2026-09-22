@@ -49,7 +49,7 @@ export function landingDraft(): unknown {
         title: 'Home',
         pageType: 'landing',
         blocks: [
-          { component: 'NavBarSimple', props: { brand: 'Acme' } },
+          { component: 'LogoStrip' },
           {
             component: 'HeroSplit',
             props: {
@@ -59,7 +59,7 @@ export function landingDraft(): unknown {
             },
             content: { illustration: { prompt: 'a developer at a desk', alt: 'Developer at a desk' } },
           },
-          { component: 'FooterSimple', props: { brand: 'Acme', note: '(c) 2026' } },
+          { component: 'StatsBand' },
         ],
       },
     ],

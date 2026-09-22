@@ -42,12 +42,12 @@ function landingDraft(pages?: unknown): Record<string, unknown> {
         title: 'Home',
         pageType: 'landing',
         blocks: [
-          { component: 'NavBarSimple', props: { brand: 'Acme' } },
+          { component: 'LogoStrip' },
           {
             component: 'HeroSplit',
             content: { illustration: { prompt: 'a developer at a desk', alt: 'Developer at a desk' } },
           },
-          { component: 'FooterSimple', props: { brand: 'Acme', note: '(c) 2026' } },
+          { component: 'StatsBand' },
         ],
       },
     ],
@@ -157,5 +157,47 @@ describe('deriveSpecInput', () => {
     const feedback = failureOf(deriveSpecInput(landingDraft([page, page])))
 
     expect(feedback).toMatch(/duplicate derived asset id/)
+  })
+})
+
+describe('deriveSpecInput gate: cross-page targets', () => {
+  it('rejects a CTA that points at a route no page declares', () => {
+    const draft = landingDraft([
+      {
+        route: '/',
+        title: 'Home',
+        pageType: 'landing',
+        blocks: [
+          { component: 'HeroSplit', props: { primaryCta: { label: 'Enterprise', to: '/enterprise' } } },
+          { component: 'StatsBand' },
+        ],
+      },
+      { route: '/about', title: 'About', pageType: 'landing', blocks: [{ component: 'StatsBand' }, { component: 'TestimonialRow' }] },
+      { route: '/pricing', title: 'Pricing', pageType: 'landing', blocks: [{ component: 'StatsBand' }, { component: 'TestimonialRow' }] },
+    ])
+
+    expect(failureOf(deriveSpecInput(draft))).toMatch(/\/enterprise.*not a declared route/)
+  })
+
+  it('accepts a CTA that names a declared route', () => {
+    const value = okValue(
+      deriveSpecInput(
+        landingDraft([
+          {
+            route: '/',
+            title: 'Home',
+            pageType: 'landing',
+            blocks: [
+              { component: 'HeroSplit', props: { primaryCta: { label: 'Pricing', to: '/pricing' } } },
+              { component: 'StatsBand' },
+            ],
+          },
+          { route: '/about', title: 'About', pageType: 'landing', blocks: [{ component: 'StatsBand' }, { component: 'TestimonialRow' }] },
+          { route: '/pricing', title: 'Pricing', pageType: 'landing', blocks: [{ component: 'StatsBand' }, { component: 'TestimonialRow' }] },
+        ]),
+      ),
+    )
+
+    expect(value.pages[0]!.blocks[0]!.props).toEqual({ primaryCta: { label: 'Pricing', to: '/pricing' } })
   })
 })

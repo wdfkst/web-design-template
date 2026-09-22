@@ -1,21 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import { ProjectSpecInputSchema } from '@vudt/spec'
-import { BlockDerivationError, derivePageAssets, mergeDerivedAssets } from '../derive.js'
+import { BlockDerivationError, assertCtaTargets, derivePageAssets, mergeDerivedAssets } from '../derive.js'
 import { deriveSpecInput } from '../draft.js'
 import { AuthPanel, HeroSplit, StatsBand, LogoStrip, PricingCard, TestimonialRow, FAQAccordion } from '../registry.js'
 
 const landing = [
-  { component: 'NavBarSimple' },
+  { component: 'LogoStrip' },
   { component: 'HeroSplit' },
   { component: 'FeatureTriad' },
   { component: 'CtaBanner' },
-  { component: 'FooterSimple' },
 ]
 
 describe('derivePageAssets', () => {
   it('derives one asset per declared slot and none for slotless blocks', () => {
     const { blocks, assets } = derivePageAssets('/', landing)
-    expect(blocks).toHaveLength(5)
+    expect(blocks).toHaveLength(4)
     expect(assets).toHaveLength(5) // 1 hero + 3 features + 1 cta
     expect(blocks[0]?.assetBindings).toEqual({})
   })
@@ -105,6 +104,17 @@ describe('derivePageAssets', () => {
       derivePageAssets('/', [{ component: 'FeatureTriad', content: { four: { alt: 'x' } } }]),
     ).toThrow(/featureOne, featureTwo, featureThree/)
   })
+
+  // Folded into "unknown component" this message would send the model looking
+  // for a different block; it has to be told to drop this one.
+  it('rejects a layout component, naming it as a layout rather than an unknown block', () => {
+    expect(() => derivePageAssets('/', [{ component: 'NavBarSimple' }])).toThrow(
+      /NavBarSimple.*project-level layout/,
+    )
+    expect(() => derivePageAssets('/', [{ component: 'FooterSimple' }])).toThrow(
+      /pages\[\]\.blocks/,
+    )
+  })
 })
 
 describe('mergeDerivedAssets', () => {
@@ -121,11 +131,10 @@ describe('mergeDerivedAssets', () => {
 
   it('derives no assets for the new slotless StatsBand', () => {
     const { blocks, assets } = derivePageAssets('/', [
-      { component: 'NavBarSimple' },
       { component: 'StatsBand', props: { heading: 'By the numbers', stats: [{ label: 'Users', value: '12k' }] } },
     ])
     expect(assets).toHaveLength(0)
-    expect(blocks[1]!.props).toEqual({
+    expect(blocks[0]!.props).toEqual({
       heading: 'By the numbers',
       stats: [{ label: 'Users', value: '12k' }],
     })
@@ -188,6 +197,59 @@ describe('mergeDerivedAssets', () => {
   })
 })
 
+describe('assertCtaTargets', () => {
+  const routes = new Set(['/', '/pricing', '/signin'])
+
+  it('accepts a target that names a declared route', () => {
+    expect(() =>
+      assertCtaTargets(
+        '/',
+        [{ component: 'HeroSplit', props: { primaryCta: { label: 'Pricing', to: '/pricing' } } }],
+        routes,
+      ),
+    ).not.toThrow()
+  })
+
+  it('finds a target nested inside a list prop', () => {
+    expect(() =>
+      assertCtaTargets(
+        '/',
+        [
+          {
+            component: 'PricingCard',
+            props: { plans: [{ name: 'Pro', cta: { label: 'Choose', to: '/nope' } }] },
+          },
+        ],
+        routes,
+      ),
+    ).toThrow(/plans\[0\]\.cta\.to.*"\/nope"/)
+  })
+
+  // The anchor is the defect this design exists to remove, so it gets its own
+  // message rather than the generic "not a declared route".
+  it('rejects an anchor even when a route of that name exists', () => {
+    expect(() =>
+      assertCtaTargets('/', [{ component: 'CtaBanner', props: { cta: { label: 'x', to: '#pricing' } } }], routes),
+    ).toThrow(/anchor/)
+  })
+
+  it('rejects a target that is not a string', () => {
+    expect(() =>
+      assertCtaTargets('/', [{ component: 'CtaBanner', props: { cta: { label: 'x', to: 7 } } }], routes),
+    ).toThrow(/must be a string route/)
+  })
+
+  it('ignores props that are not named to', () => {
+    expect(() =>
+      assertCtaTargets(
+        '/',
+        [{ component: 'AuthPanel', props: { altActionLabel: 'Create one', mode: 'sign-in' } }],
+        routes,
+      ),
+    ).not.toThrow()
+  })
+})
+
 // The real guarantee: a derived page survives the spec's cross-field checks,
 // which is what proves code side and image side cannot drift apart.
 describe('derived output against the spec schema', () => {
@@ -232,7 +294,7 @@ describe('derived output against the spec schema', () => {
       meta: { name: 'Acme', description: 'x', targetStack: 'vue3' },
       theme: { colorTokens: { primary: '#111', secondary: '#222', accent: '#333', background: '#fff', surface: '#fafafa', foreground: '#111', muted: '#777' }, radius: 'md', spacing: 'normal', fontPair: { heading: 'Inter', body: 'Inter' }, mode: 'light' },
       styleBible: { artStyle: 'flat-vector', lineWeight: 'none', shading: 'flat', perspective: 'front', palette: ['#111', '#222'], backgroundTreatment: 'solid', negativePrompt: '', seed: 1 },
-      pages: [{ route: '/', title: 'Home', pageType: 'landing', blocks: [{ component: 'NavBarSimple', outline: 'hero first, then value' }] }],
+      pages: [{ route: '/', title: 'Home', pageType: 'landing', blocks: [{ component: 'StatsBand', outline: 'hero first, then value' }] }],
     })
     expect(result.ok).toBe(true)
     if (result.ok) {

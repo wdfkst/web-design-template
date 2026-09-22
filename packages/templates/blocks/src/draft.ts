@@ -11,6 +11,7 @@ import {
 import { z } from 'zod'
 import {
   BlockDerivationError,
+  assertCtaTargets,
   derivePageAssets,
   mergeDerivedAssets,
   type BlockSelection,
@@ -73,10 +74,20 @@ export function deriveSpecInput(draft: unknown): DeriveSpecResult {
   const { meta, theme, styleBible, pages } = parsed.data
 
   try {
-    const derivations = pages.map((page) => ({
-      page,
-      derived: derivePageAssets(page.route, page.blocks.map(toSelection)),
-    }))
+    const routes = new Set(pages.map((page) => page.route))
+    const derivations = pages.map((page) => {
+      const selections = page.blocks.map(toSelection)
+      return { page, selections, derived: derivePageAssets(page.route, selections) }
+    })
+
+    // Targets are checked after derivation so a layout block is reported as a
+    // layout (and an invented component as unknown) rather than as a bad route —
+    // a draft carrying NavBarSimple would otherwise trip the `to` check first,
+    // because its `links` prop is full of `to` keys.
+    for (const entry of derivations) {
+      assertCtaTargets(entry.page.route, entry.selections, routes)
+    }
+
     const assets = mergeDerivedAssets(derivations.map((entry) => entry.derived))
 
     return {
