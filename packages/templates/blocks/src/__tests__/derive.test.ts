@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ProjectSpecInputSchema } from '@vudt/spec'
 import { BlockDerivationError, derivePageAssets, mergeDerivedAssets } from '../derive.js'
+import { deriveSpecInput } from '../draft.js'
 import { AuthPanel, HeroSplit, StatsBand, LogoStrip, PricingCard, TestimonialRow, FAQAccordion } from '../registry.js'
 
 const landing = [
@@ -224,5 +225,18 @@ describe('derived output against the spec schema', () => {
     })
     expect(result.error?.issues ?? []).toEqual([])
     expect(result.success).toBe(true)
+  })
+
+  it('silently strips unknown keys a model might add (e.g. an outline)', () => {
+    const result = deriveSpecInput({
+      meta: { name: 'Acme', description: 'x', targetStack: 'vue3' },
+      theme: { colorTokens: { primary: '#111', secondary: '#222', accent: '#333', background: '#fff', surface: '#fafafa', foreground: '#111', muted: '#777' }, radius: 'md', spacing: 'normal', fontPair: { heading: 'Inter', body: 'Inter' }, mode: 'light' },
+      styleBible: { artStyle: 'flat-vector', lineWeight: 'none', shading: 'flat', perspective: 'front', palette: ['#111', '#222'], backgroundTreatment: 'solid', negativePrompt: '', seed: 1 },
+      pages: [{ route: '/', title: 'Home', pageType: 'landing', blocks: [{ component: 'NavBarSimple', outline: 'hero first, then value' }] }],
+    })
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.value.pages[0]!.blocks[0]!.props).toEqual({})
+    }
   })
 })

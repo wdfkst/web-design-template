@@ -289,4 +289,15 @@ describe('createOpenAISpecDrafter', () => {
     await drafter.draft({ description: 'a landing page', attempt: 1 })
     expect(calls[0]!.body.response_format).toEqual({ type: 'json_object' })
   })
+
+  test('asks the model to plan an outline before writing the draft', async () => {
+    const { calls, drafter } = drafterWith(chatReply('{}'))
+
+    await drafter.draft({ description: 'a landing page', attempt: 1 })
+
+    const system = systemOf(calls[0]!)
+    expect(system).toMatch(/outline/i)
+    expect(system).toMatch(/design process/i)
+    expect(system).toMatch(/brand-flavoured/i)
+  })
 })
