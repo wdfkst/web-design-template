@@ -29,7 +29,7 @@ const DraftPageSchema = z.object({
   route: PageSchema.shape.route,
   title: PageSchema.shape.title,
   pageType: PageTypeSchema,
-  blocks: z.array(DraftBlockSchema).min(1),
+  blocks: z.array(DraftBlockSchema).min(2),
 })
 
 /**
@@ -38,11 +38,17 @@ const DraftPageSchema = z.object({
  * array: both are derived from the block sidecars, never written by the model.
  * The spec's own schema pieces are reused so the two shapes cannot drift apart.
  */
+/**
+ * "A complete site" is the drafter's contract, not the spec container's: a spec
+ * is still allowed to hold one page, because template presets and hand-edited
+ * specs use it that way. Relaxing the spec to fit one model run — or tightening
+ * it to force one — is the mistake this split avoids.
+ */
 export const ProjectDraftSchema = z.object({
   meta: MetaSchema,
   theme: ThemeSchema,
   styleBible: StyleBibleSchema,
-  pages: z.array(DraftPageSchema).min(1),
+  pages: z.array(DraftPageSchema).min(3),
 })
 
 export type ProjectDraft = z.infer<typeof ProjectDraftSchema>

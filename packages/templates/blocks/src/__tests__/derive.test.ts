@@ -294,7 +294,11 @@ describe('derived output against the spec schema', () => {
       meta: { name: 'Acme', description: 'x', targetStack: 'vue3' },
       theme: { colorTokens: { primary: '#111', secondary: '#222', accent: '#333', background: '#fff', surface: '#fafafa', foreground: '#111', muted: '#777' }, radius: 'md', spacing: 'normal', fontPair: { heading: 'Inter', body: 'Inter' }, mode: 'light' },
       styleBible: { artStyle: 'flat-vector', lineWeight: 'none', shading: 'flat', perspective: 'front', palette: ['#111', '#222'], backgroundTreatment: 'solid', negativePrompt: '', seed: 1 },
-      pages: [{ route: '/', title: 'Home', pageType: 'landing', blocks: [{ component: 'StatsBand', outline: 'hero first, then value' }] }],
+      pages: [
+        { route: '/', title: 'Home', pageType: 'landing', blocks: [{ component: 'StatsBand', outline: 'hero first, then value' }, { component: 'TestimonialRow' }] },
+        { route: '/about', title: 'About', pageType: 'landing', blocks: [{ component: 'StatsBand' }, { component: 'TestimonialRow' }] },
+        { route: '/pricing', title: 'Pricing', pageType: 'landing', blocks: [{ component: 'StatsBand' }, { component: 'TestimonialRow' }] },
+      ],
     })
     expect(result.ok).toBe(true)
     if (result.ok) {

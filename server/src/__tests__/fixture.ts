@@ -49,17 +49,34 @@ export function landingDraft(): unknown {
         title: 'Home',
         pageType: 'landing',
         blocks: [
-          { component: 'LogoStrip' },
           {
             component: 'HeroSplit',
             props: {
               headline: 'Ship faster',
               subhead: 'Tooling that gets out of the way',
-              primaryCta: 'Get started',
+              primaryCta: { label: 'See pricing', to: '/pricing' },
             },
             content: { illustration: { prompt: 'a developer at a desk', alt: 'Developer at a desk' } },
           },
-          { component: 'StatsBand' },
+          { component: 'StatsBand', props: { heading: 'By the numbers' } },
+        ],
+      },
+      {
+        route: '/about',
+        title: 'About',
+        pageType: 'landing',
+        blocks: [
+          { component: 'StatsBand', props: { heading: 'Our story' } },
+          { component: 'TestimonialRow', props: { heading: 'What people say' } },
+        ],
+      },
+      {
+        route: '/pricing',
+        title: 'Pricing',
+        pageType: 'landing',
+        blocks: [
+          { component: 'HeroCentered', props: { headline: 'Pricing' } },
+          { component: 'PricingCard', props: { heading: 'Pick a plan' } },
         ],
       },
     ],

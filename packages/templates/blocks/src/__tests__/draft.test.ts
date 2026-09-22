@@ -30,27 +30,52 @@ const styleBible = {
   seed: 7,
 } as const
 
+/**
+ * The draft contract demands a small site, not a single page. Fixtures have to
+ * satisfy it or every assertion below would fail on the shape gate instead of on
+ * the behaviour it means to test.
+ */
+function contentBlock(component: string, props?: unknown, content?: unknown): Record<string, unknown> {
+  return {
+    component,
+    ...(props === undefined ? {} : { props }),
+    ...(content === undefined ? {} : { content }),
+  }
+}
+
+function homePage(blocks?: unknown): Record<string, unknown> {
+  return {
+    route: '/',
+    title: 'Home',
+    pageType: 'landing',
+    blocks: blocks ?? [
+      contentBlock(
+        'HeroSplit',
+        { primaryCta: { label: 'See pricing', to: '/pricing' } },
+        { illustration: { prompt: 'a developer at a desk', alt: 'Developer at a desk' } },
+      ),
+      contentBlock('StatsBand', { heading: 'By the numbers' }),
+    ],
+  }
+}
+
+/** A legal filler page: three pages minimum, two blocks each. */
+function fillerPage(route: string, title: string): Record<string, unknown> {
+  return {
+    route,
+    title,
+    pageType: 'landing',
+    blocks: [contentBlock('StatsBand'), contentBlock('TestimonialRow')],
+  }
+}
+
 /** What the model is expected to send: blocks carry subject text, not geometry. */
 function landingDraft(pages?: unknown): Record<string, unknown> {
   return {
     meta: { name: 'Acme', description: 'A landing page for Acme', targetStack: 'vue3' },
     theme,
     styleBible,
-    pages: pages ?? [
-      {
-        route: '/',
-        title: 'Home',
-        pageType: 'landing',
-        blocks: [
-          { component: 'LogoStrip' },
-          {
-            component: 'HeroSplit',
-            content: { illustration: { prompt: 'a developer at a desk', alt: 'Developer at a desk' } },
-          },
-          { component: 'StatsBand' },
-        ],
-      },
-    ],
+    pages: pages ?? [homePage(), fillerPage('/about', 'About'), fillerPage('/pricing', 'Pricing')],
   }
 }
 
@@ -77,9 +102,10 @@ describe('deriveSpecInput', () => {
 
     // Only HeroSplit has slots, so the draft's three blocks yield one asset.
     expect(value.assets).toHaveLength(1)
-    expect(value.assets[0]!.id).toBe(value.pages[0]!.blocks[1]!.assetBindings.illustration)
+    expect(value.assets[0]!.id).toBe(value.pages[0]!.blocks[0]!.assetBindings.illustration)
     expect(value.assets[0]!.renderSize).toEqual(illustration.renderSize)
     expect(value.assets[0]!.aspectRatio).toBe(illustration.aspectRatio)
+    expect(value.pages[1]!.blocks).toHaveLength(2)
   })
 
   it('carries the subject text the model wrote', () => {
@@ -93,12 +119,9 @@ describe('deriveSpecInput', () => {
     const value = okValue(
       deriveSpecInput(
         landingDraft([
-          {
-            route: '/',
-            title: 'Home',
-            pageType: 'landing',
-            blocks: [{ component: 'HeroSplit' }],
-          },
+          homePage([contentBlock('HeroSplit'), contentBlock('StatsBand')]),
+          fillerPage('/about', 'About'),
+          fillerPage('/pricing', 'Pricing'),
         ]),
       ),
     )
@@ -120,12 +143,12 @@ describe('deriveSpecInput', () => {
     const feedback = failureOf(
       deriveSpecInput(
         landingDraft([
-          {
-            route: '/',
-            title: 'Home',
-            pageType: 'landing',
-            blocks: [{ component: 'HeroSplit', content: { banner: { prompt: 'anything' } } }],
-          },
+          homePage([
+            contentBlock('HeroSplit', undefined, { banner: { prompt: 'anything' } }),
+            contentBlock('StatsBand'),
+          ]),
+          fillerPage('/about', 'About'),
+          fillerPage('/pricing', 'Pricing'),
         ]),
       ),
     )
@@ -138,7 +161,9 @@ describe('deriveSpecInput', () => {
     const feedback = failureOf(
       deriveSpecInput(
         landingDraft([
-          { route: '/', title: 'Home', pageType: 'landing', blocks: [{ component: 'MadeUpBlock' }] },
+          homePage([contentBlock('MadeUpBlock'), contentBlock('StatsBand')]),
+          fillerPage('/about', 'About'),
+          fillerPage('/pricing', 'Pricing'),
         ]),
       ),
     )
@@ -151,10 +176,10 @@ describe('deriveSpecInput', () => {
       route: '/',
       title: 'Home',
       pageType: 'landing',
-      blocks: [{ component: 'HeroSplit' }],
+      blocks: [contentBlock('HeroSplit'), contentBlock('StatsBand')],
     }
 
-    const feedback = failureOf(deriveSpecInput(landingDraft([page, page])))
+    const feedback = failureOf(deriveSpecInput(landingDraft([page, page, fillerPage('/about', 'About')])))
 
     expect(feedback).toMatch(/duplicate derived asset id/)
   })
@@ -199,5 +224,27 @@ describe('deriveSpecInput gate: cross-page targets', () => {
     )
 
     expect(value.pages[0]!.blocks[0]!.props).toEqual({ primaryCta: { label: 'Pricing', to: '/pricing' } })
+  })
+})
+
+describe('deriveSpecInput gate: the draft has to be a site, not a page', () => {
+  it('rejects a draft that plans only one page, naming the path', () => {
+    const feedback = failureOf(deriveSpecInput(landingDraft([homePage()])))
+
+    expect(feedback).toMatch(/^pages: /m)
+  })
+
+  it('rejects a page with a single block, naming the page', () => {
+    const feedback = failureOf(
+      deriveSpecInput(
+        landingDraft([
+          homePage([contentBlock('StatsBand')]),
+          fillerPage('/about', 'About'),
+          fillerPage('/pricing', 'Pricing'),
+        ]),
+      ),
+    )
+
+    expect(feedback).toMatch(/^pages\[0\]\.blocks: /m)
   })
 })

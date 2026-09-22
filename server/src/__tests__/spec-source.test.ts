@@ -49,9 +49,13 @@ describe('draftSpec', () => {
     // The model can no longer send geometry, so the interesting failure moved:
     // an invented slot name is the shape mistake that still costs a retry.
     const draft = landingDraft() as { pages: { blocks: unknown[] }[] }
-    // The prompt has to clear SlotContentSchema's minimum, or the shape check
-    // fails first and the slot name is never looked up.
-    draft.pages[0]!.blocks = [{ component: 'HeroSplit', content: { banner: { prompt: 'anything' } } }]
+    // The prompt has to clear SlotContentSchema's minimum, and the page has to
+    // clear the block minimum, or the shape check fails first and the slot name
+    // is never looked up.
+    draft.pages[0]!.blocks = [
+      { component: 'HeroSplit', content: { banner: { prompt: 'anything' } } },
+      { component: 'StatsBand' },
+    ]
 
     let caught: unknown
     try {
@@ -66,11 +70,13 @@ describe('draftSpec', () => {
 
   it('rejects duplicate routes — the check derivation does not do', async () => {
     // Slotless blocks on purpose: with slots, the second page would collide on
-    // asset ids first and this would stop proving gate 2 does anything.
+    // asset ids first and this would stop proving gate 2 does anything. Three
+    // pages because the draft contract demands a site, not a single page.
     const draft = landingDraft() as { pages: unknown[] }
     draft.pages = [
-      { route: '/', title: 'Home', pageType: 'landing', blocks: [{ component: 'StatsBand' }] },
-      { route: '/', title: 'Home again', pageType: 'landing', blocks: [{ component: 'StatsBand' }] },
+      { route: '/', title: 'Home', pageType: 'landing', blocks: [{ component: 'StatsBand' }, { component: 'TestimonialRow' }] },
+      { route: '/', title: 'Home again', pageType: 'landing', blocks: [{ component: 'StatsBand' }, { component: 'TestimonialRow' }] },
+      { route: '/pricing', title: 'Pricing', pageType: 'landing', blocks: [{ component: 'StatsBand' }, { component: 'TestimonialRow' }] },
     ]
 
     let caught: unknown
