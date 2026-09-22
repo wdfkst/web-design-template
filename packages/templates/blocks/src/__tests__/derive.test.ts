@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ProjectSpecInputSchema } from '@vudt/spec'
 import { BlockDerivationError, derivePageAssets, mergeDerivedAssets } from '../derive.js'
-import { HeroSplit, StatsBand, LogoStrip } from '../registry.js'
+import { HeroSplit, StatsBand, LogoStrip, PricingCard } from '../registry.js'
 
 const landing = [
   { component: 'NavBarSimple' },
@@ -86,7 +86,7 @@ describe('derivePageAssets', () => {
   // set — same reason the slot error lists the declared slots.
   it('names the available components in the error to help the retry prompt', () => {
     expect(() => derivePageAssets('/', [{ component: 'MadeUpBlock' }])).toThrow(
-      /MadeUpBlock.*available: CtaBanner, EmptyStatePanel, FeatureTriad, FooterSimple, HeroCentered, HeroSplit, LogoStrip, NavBarSimple, StatsBand/,
+      /MadeUpBlock.*available: CtaBanner, EmptyStatePanel, FeatureTriad, FooterSimple, HeroCentered, HeroSplit, LogoStrip, NavBarSimple, PricingCard, StatsBand/,
     )
   })
 
@@ -138,6 +138,17 @@ describe('mergeDerivedAssets', () => {
     expect(blocks[0]!.props).toEqual({
       heading: 'Trusted by',
       logos: [{ name: 'Acme', to: 'https://acme.com' }],
+    })
+  })
+
+  it('derives no assets for the slotless PricingCard', () => {
+    const { blocks, assets } = derivePageAssets('/', [
+      { component: 'PricingCard', props: { heading: 'Pick a plan', plans: [{ name: 'Pro', price: '$29', features: ['a', 'b'] }] } },
+    ])
+    expect(assets).toHaveLength(0)
+    expect(blocks[0]!.props).toEqual({
+      heading: 'Pick a plan',
+      plans: [{ name: 'Pro', price: '$29', features: ['a', 'b'] }],
     })
   })
 })
