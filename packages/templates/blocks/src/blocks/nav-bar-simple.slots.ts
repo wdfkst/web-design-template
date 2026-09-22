@@ -10,5 +10,6 @@ export const NavBarSimple: BlockDefinition = {
     cta: '{ label, to }',
     orientation: '"horizontal" | "vertical"',
   },
+  layoutOnly: true,
   slots: [],
 }

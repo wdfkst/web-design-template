@@ -34,3 +34,34 @@ describe('block SFCs navigate with router-link, never with an anchor', () => {
     expect(sfc).toContain('<router-link')
   })
 })
+
+const layoutSfcDir = fileURLToPath(new URL('../../../vue3-base/src/layouts/', import.meta.url))
+
+function readLayout(name: string): string {
+  return readFileSync(`${layoutSfcDir}${name}.vue`, 'utf8')
+}
+
+describe('layout shells', () => {
+  it('AppShell wraps nav, the router outlet and the footer', () => {
+    const sfc = readLayout('AppShell')
+    expect(sfc).toContain('<NavBarSimple')
+    expect(sfc).toContain('<slot />')
+    expect(sfc).toContain('<FooterSimple')
+  })
+
+  it('SidebarShell keeps the nav beside the content and drops the footer', () => {
+    const sfc = readLayout('SidebarShell')
+    expect(sfc).toContain('<NavBarSimple')
+    expect(sfc).toContain('orientation="vertical"')
+    expect(sfc).toContain('<slot />')
+    expect(sfc).not.toContain('<FooterSimple')
+  })
+
+  // Without this the auth page would render the shell it was supposed to escape.
+  // Guarded per chrome element, so a dropped guard fails rather than passing on
+  // the other one: nav + footer in AppShell, the aside alone in SidebarShell.
+  it('both shells hide their chrome when the route asks for it', () => {
+    expect(readLayout('AppShell').match(/v-if="!chromeless"/g)).toHaveLength(2)
+    expect(readLayout('SidebarShell').match(/v-if="!chromeless"/g)).toHaveLength(1)
+  })
+})

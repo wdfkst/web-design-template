@@ -34,6 +34,12 @@ export interface BlockDefinition {
    * on purpose — the code generator injects it from `assetBindings`.
    */
   props: Readonly<Record<string, string>>
+  /**
+   * Rendered once per project by the App shell, never inside `pages[].blocks`.
+   * The drafter's catalogue skips these, and both gates reject them — a page
+   * that carried its own nav would render a second one under the layout's.
+   */
+  layoutOnly?: boolean
   slots: readonly SlotSpec[]
 }
 

@@ -79,4 +79,15 @@ describe('block registry', () => {
     expect(landing).toContain('HeroSplit')
     expect(landing).not.toContain('EmptyStatePanel')
   })
+
+  // Layout components stay in the registry so `sfc-props.test.ts` keeps checking
+  // their props against their SFCs — but the drafter must never offer them as
+  // page blocks, and the derivation must reject them if it does.
+  it('marks exactly NavBarSimple and FooterSimple as layout-only', () => {
+    const layoutOnly = [...BLOCK_REGISTRY.values()]
+      .filter((definition) => definition.layoutOnly === true)
+      .map((definition) => definition.component)
+      .sort()
+    expect(layoutOnly).toEqual(['FooterSimple', 'NavBarSimple'])
+  })
 })
