@@ -79,6 +79,7 @@
 - Modify: `packages/templates/vue3-base/src/blocks/CtaBanner.vue`（script + CTA 行）
 - Modify: `packages/templates/vue3-base/src/blocks/EmptyStatePanel.vue`（script + CTA 行）
 - Modify: `packages/templates/vue3-base/src/blocks/PricingCard.vue`（`Plan` 接口 + CTA 行）
+- Modify: `packages/templates/vue3-base/src/blocks/AuthPanel.vue`（死锚点 → `<button>`，见 Step 9b）
 - Modify: `packages/templates/blocks/src/blocks/nav-bar-simple.slots.ts`
 - Modify: `packages/templates/blocks/src/blocks/hero-split.slots.ts`
 - Modify: `packages/templates/blocks/src/blocks/hero-centered.slots.ts`
@@ -458,6 +459,20 @@ interface Cta {
             :class="{ 'button--ghost': !plan.featured }"
           >{{ plan.cta.label }}</router-link>
 ```
+
+- [ ] **Step 9b: 把 `AuthPanel.vue` 的死锚点换成 `<button>`**
+
+`packages/templates/vue3-base/src/blocks/AuthPanel.vue:50` 是 `<a v-if="altActionLabel" class="auth__alt" href="#auth">{{ altActionLabel }}</a>` —— 而整个文件里没有 `id="auth"`，所以点「Create an account」原地不动。这正是本次要消灭的症状，Step 1 的 `hardcodes no anchor href` 会遍历到它。
+
+把那一行替换为：
+
+```vue
+        <button v-if="altActionLabel" class="auth__alt" type="button">
+          {{ altActionLabel }}
+        </button>
+```
+
+> **为什么在 spec 说「AuthPanel 不动」的情况下还改它**：spec 把它排除在外的理由是「`altActionLabel` 语义是同页 `mode` 切换，名字里没有 `to`，新约定碰不到它」—— 这条依然成立，本步**不改任何 props**，侧车也不动。但 `href="#auth"` 是一个死锚点，而 spec 自己在 LogoStrip 那条里定过调子：「编出来的域名比不渲染更糟 ——『点了没反应』正是这次要消灭的东西」。同一句话适用于这里。改成 `<button type="button">` 是对「它没有去向」的诚实表达，和 `EmptyStatePanel` 的处理一致。
 
 - [ ] **Step 10: 跑测试确认它仍然红（SFC 改了、侧车没改）**
 
@@ -884,7 +899,11 @@ describe('assertCtaTargets', () => {
 import { BlockDerivationError, assertCtaTargets, derivePageAssets, mergeDerivedAssets } from '../derive.js'
 ```
 
-最后在 `describe('deriveSpecInput', …)` 之外、文件末尾追加：
+> **`deriveSpecInput` 的闸测试不写在这个文件里。** 它归 `draft.test.ts` —— 那里已经有 `landingDraft()` / `failureOf()` / `theme` / `styleBible` 四个本地（**未导出**）帮手，而本文件一个都没有。见 Task 3 Step 1b。
+
+- [ ] **Step 1b: 把 `to` 闸的集成测试加到 `draft.test.ts`**
+
+`derive.test.ts` 里**没有** `landingDraft` / `failureOf` / `theme` / `styleBible` —— 那四个都是 `draft.test.ts` 的本地（未导出）帮手，`deriveSpecInput` 的闸测试本来就住在 `draft.test.ts`。在 `packages/templates/blocks/src/__tests__/draft.test.ts` 末尾追加：
 
 ```ts
 describe('deriveSpecInput gate: cross-page targets', () => {
@@ -896,19 +915,45 @@ describe('deriveSpecInput gate: cross-page targets', () => {
         pageType: 'landing',
         blocks: [
           { component: 'HeroSplit', props: { primaryCta: { label: 'Pricing', to: '/pricing' } } },
-          { component: 'HeroSplit' },
+          { component: 'StatsBand' },
         ],
       },
+      { route: '/about', title: 'About', pageType: 'landing', blocks: [{ component: 'StatsBand' }, { component: 'TestimonialRow' }] },
+      { route: '/pricing', title: 'Pricing', pageType: 'landing', blocks: [{ component: 'StatsBand' }, { component: 'TestimonialRow' }] },
     ])
 
     expect(failureOf(deriveSpecInput(draft))).toMatch(/\/pricing.*not a declared route/)
   })
+
+  it('accepts a CTA that names a declared route', () => {
+    const value = okValue(
+      deriveSpecInput(
+        landingDraft([
+          {
+            route: '/',
+            title: 'Home',
+            pageType: 'landing',
+            blocks: [
+              { component: 'HeroSplit', props: { primaryCta: { label: 'Pricing', to: '/pricing' } } },
+              { component: 'StatsBand' },
+            ],
+          },
+          { route: '/about', title: 'About', pageType: 'landing', blocks: [{ component: 'StatsBand' }, { component: 'TestimonialRow' }] },
+          { route: '/pricing', title: 'Pricing', pageType: 'landing', blocks: [{ component: 'StatsBand' }, { component: 'TestimonialRow' }] },
+        ]),
+      ),
+    )
+
+    expect(value.pages[0]!.blocks[0]!.props).toEqual({ primaryCta: { label: 'Pricing', to: '/pricing' } })
+  })
 })
 ```
 
+> 两个 draft 都写成 **3 页 × 每页 2 块**，这不是凑数：`deriveSpecInput` 先跑 `ProjectDraftSchema.safeParse`（形状闸），**通过了才走到 derive**。Task 5 加上 `pages.min(3)` / `blocks.min(2)` 之后，写成单页的 draft 会先在形状闸上失败，`failureOf()` 拿到的是 `pages: Too small…` 而不是路由错误 —— 也就是说，先写成单页、Task 5 再回来改。这里一次写对，Task 5 不用再动它。
+
 - [ ] **Step 2: 跑测试确认它红**
 
-Run: `pnpm --filter @vudt/blocks test -- derive`
+Run: `pnpm --filter @vudt/blocks test -- derive draft`
 Expected: FAIL —— `assertCtaTargets is not a function`；`rejects a layout component…` 抛的是 `unknown block component`，匹配不上。
 
 - [ ] **Step 3: 在 `derive.ts` 里加 layoutOnly 拒绝**
@@ -1290,6 +1335,7 @@ Co-Authored-By: Claude Code <noreply@anthropic.com>"
 **Files:**
 - Modify: `packages/templates/blocks/src/draft.ts`
 - Modify: `packages/templates/blocks/src/__tests__/draft.test.ts`
+- Modify: `packages/templates/blocks/src/__tests__/derive.test.ts`（:231 那处 `deriveSpecInput` 的单页 draft）
 - Modify: `server/src/__tests__/fixture.ts`
 - Modify: `server/src/__tests__/spec-source.test.ts`
 
@@ -1444,6 +1490,24 @@ Expected: FAIL —— 两条新用例报 `expected failure`（下限还没加，
  * it to force one — is the mistake this split avoids.
  */
 ```
+
+- [ ] **Step 3b: 把 `derive.test.ts` 里那处单页 draft 也改成 3 页**
+
+`packages/templates/blocks/src/__tests__/derive.test.ts` 的 `silently strips unknown keys a model might add (e.g. an outline)` 直接调了 `deriveSpecInput`，而它的 draft 只有 **1 页 1 块** —— 下限一加，形状闸先失败，`result.ok` 变成 `false`，这条测试的两个断言会一起崩。Task 3 只把组件名从 `NavBarSimple` 换成了 `StatsBand`，页数与块数没动。
+
+把那一处 `pages:` 替换为：
+
+```ts
+      pages: [
+        { route: '/', title: 'Home', pageType: 'landing', blocks: [{ component: 'StatsBand', outline: 'hero first, then value' }, { component: 'TestimonialRow' }] },
+        { route: '/about', title: 'About', pageType: 'landing', blocks: [{ component: 'StatsBand' }, { component: 'TestimonialRow' }] },
+        { route: '/pricing', title: 'Pricing', pageType: 'landing', blocks: [{ component: 'StatsBand' }, { component: 'TestimonialRow' }] },
+      ],
+```
+
+两条断言（`result.ok === true`、`blocks[0].props` 等于 `{}`）保持不变 —— `outline` 仍然是被静默剥掉的未知键，填充页仍是无 slot 的内容块。
+
+> 仓库里另外两处 `deriveSpecInput` 调用不用动：`server/src/__tests__/spec-view.test.ts:9` 调的是 `landingDraft()` 无参形式，会直接拿到 Step 4 改好的 3 页夹具；`server/src/spec-source.ts:53` 是生产代码。
 
 - [ ] **Step 4: 把服务端夹具改成 3 页**
 
@@ -2190,8 +2254,8 @@ Expected: FAIL —— `lists every content block…` 对 `NavBarSimple` / `Foote
 
 ```ts
     '- Plan a small site, not one page: 3-6 pages — a home page plus at least two inner pages a',
-    '  visitor would actually want (pricing, about, docs, contact, sign in). Give each page 2-5',
-    '  content blocks.',
+    '  visitor would actually want (pricing, about, docs, contact, sign in).',
+    '- Give each page 2-5 content blocks.',
     '- "title" is short: 2-6 words. The nav bar uses it verbatim as the link text, and the first',
     '  auth page\'s title becomes the button at the end of the nav bar — so write the page names a',
     '  menu would show, not sentences.',
