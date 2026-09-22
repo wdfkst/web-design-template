@@ -42,7 +42,7 @@ describe('writeProject', () => {
 
   it('removes the template placeholder page it did not regenerate', async () => {
     const pages = await readdir(join(outDir, 'src', 'pages'))
-    expect(pages.sort()).toEqual(['HomePage.vue', 'PricingPage.vue'])
+    expect(pages.sort()).toEqual(['HomePage.vue', 'PricingPage.vue', 'SigninPage.vue'])
   })
 
   it('substitutes the title into the copied index.html', async () => {

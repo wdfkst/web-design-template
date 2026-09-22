@@ -7,7 +7,11 @@ interface Field {
 
 withDefaults(
   defineProps<{
-    mode?: 'sign-in' | 'sign-up'
+    // `string`, not 'sign-in' | 'sign-up': the code generator emits page props as
+    // a plain JSON const bound with v-bind, which widens the literal. A union here
+    // would turn one typo in an unvalidated spec prop into a build failure for the
+    // whole generated project. The intended values are documented in the sidecar.
+    mode?: string
     heading?: string
     subheading?: string
     fields?: Field[]

@@ -1,4 +1,5 @@
 import type { ProjectSpec } from '@vudt/spec'
+import { renderApp } from './app.js'
 import { assetFilePath, pageComponentName } from './naming.js'
 import { renderPage } from './page.js'
 import { renderRouter } from './router.js'
@@ -25,6 +26,10 @@ export interface GeneratedProject {
  * template base copied verbatim, which is why this stays testable without a
  * filesystem: the only generated artifacts are the pages, the router, and the
  * theme tokens.
+ *
+ * App.vue is generated rather than copied because the nav, the CTA and the
+ * shell choice all come from `spec.pages` — it is the one file where the
+ * project's cross-page structure is written down.
  */
 export function generateProject(spec: ProjectSpec): GeneratedProject {
   const files: Record<string, string> = {}
@@ -33,6 +38,7 @@ export function generateProject(spec: ProjectSpec): GeneratedProject {
     files[`src/pages/${pageComponentName(page.route)}.vue`] = renderPage(spec, page)
   }
 
+  files['src/App.vue'] = renderApp(spec)
   files['src/router.ts'] = renderRouter(spec)
   files['src/styles/tokens.css'] = renderTokensCss(spec)
 

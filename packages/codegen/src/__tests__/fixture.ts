@@ -88,8 +88,23 @@ export function landingSpec(): ProjectSpec {
     },
   ]
 
+  const signin: BlockSelection[] = [
+    {
+      component: 'AuthPanel',
+      props: {
+        mode: 'sign-in',
+        heading: 'Sign in to Acme',
+        fields: [{ label: 'Email', type: 'email' }],
+        submitLabel: 'Sign in',
+        altActionLabel: 'Create an account',
+      },
+    },
+    { component: 'TestimonialRow', props: { heading: 'Loved by developers' } },
+  ]
+
   const homeDerived = derivePageAssets('/', home)
   const pricingDerived = derivePageAssets('/pricing', pricing)
+  const signinDerived = derivePageAssets('/signin', signin)
 
   const input = {
     meta: {
@@ -102,8 +117,9 @@ export function landingSpec(): ProjectSpec {
     pages: [
       { route: '/', title: 'Home', pageType: 'landing', blocks: homeDerived.blocks },
       { route: '/pricing', title: 'Pricing', pageType: 'landing', blocks: pricingDerived.blocks },
+      { route: '/signin', title: 'Sign in', pageType: 'auth', blocks: signinDerived.blocks },
     ],
-    assets: mergeDerivedAssets([homeDerived, pricingDerived]),
+    assets: mergeDerivedAssets([homeDerived, pricingDerived, signinDerived]),
   }
 
   return finalizeSpec(ProjectSpecInputSchema.parse(input))

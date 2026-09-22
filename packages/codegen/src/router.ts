@@ -16,11 +16,14 @@ export function renderRouter(spec: ProjectSpec): string {
   const entries = spec.pages
     .map((page) => {
       const name = pageComponentName(page.route)
+      // Auth pages render without the shell. The flag rides on the route so the
+      // generated App.vue can decide per navigation instead of per project.
+      const meta = page.pageType === 'auth' ? `\n    meta: { chrome: false },` : ''
       return (
         `  {\n` +
         `    path: ${JSON.stringify(page.route)},\n` +
         `    name: ${JSON.stringify(routeName(page.route))},\n` +
-        `    component: ${name},\n` +
+        `    component: ${name},${meta}\n` +
         `  },`
       )
     })

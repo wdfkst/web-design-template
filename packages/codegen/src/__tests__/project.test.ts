@@ -10,8 +10,10 @@ describe('generateProject', () => {
   it('emits one page file per spec page plus router and tokens', () => {
     const { files } = generateProject(landingSpec())
     expect(Object.keys(files).sort()).toEqual([
+      'src/App.vue',
       'src/pages/HomePage.vue',
       'src/pages/PricingPage.vue',
+      'src/pages/SigninPage.vue',
       'src/router.ts',
       'src/styles/tokens.css',
     ])
@@ -46,6 +48,14 @@ describe('renderRouter', () => {
 
   it('keeps hash history so the dist works in a file-served iframe', () => {
     expect(renderRouter(landingSpec())).toContain('createWebHashHistory()')
+  })
+
+  it('drops the shell chrome on auth routes', () => {
+    const router = renderRouter(landingSpec())
+
+    expect(router).toMatch(/path: "\/signin"[\s\S]*?meta: \{ chrome: false \}/)
+    // The flag is per page, so it must not leak onto the marketing routes.
+    expect(router).not.toMatch(/path: "\/"[\s\S]{0,90}chrome/)
   })
 })
 
