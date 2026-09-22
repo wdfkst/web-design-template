@@ -1574,15 +1574,42 @@ Expected: FAIL —— 两条新用例报 `expected failure`（下限还没加，
     // pages because the draft contract demands a site, not a single page.
 ```
 
+- [ ] **Step 5b: 修 `spec-source.test.ts` 的单块覆盖**
+
+同一文件第 54 行还有一处 `draft.pages[0]!.blocks = [...]`，只放了一个块：
+
+```ts
+    draft.pages[0]!.blocks = [{ component: 'HeroSplit', content: { banner: { prompt: 'anything' } } }]
+```
+
+`blocks.min(2)` 落地后，这一页会先在形状闸上判 `pages[0].blocks: Too small…`，`has no slot "banner"` 永远轮不到 —— 正是紧邻那两行注释警告过的失败模式，只是换成了块数。改成两个块（第二个用无 slot 的块，免得它自己先撞上别的闸）：
+
+```ts
+    draft.pages[0]!.blocks = [
+      { component: 'HeroSplit', content: { banner: { prompt: 'anything' } } },
+      { component: 'StatsBand' },
+    ]
+```
+
+并把上面那两行注释补齐为：
+
+```ts
+    // The prompt has to clear SlotContentSchema's minimum, and the page has to
+    // clear the block minimum, or the shape check fails first and the slot name
+    // is never looked up.
+```
+
+> 这是全仓唯一一处 `.blocks = [` 覆盖（`grep -rn '.blocks = [' packages server web` 只此一条），所以不会有第二处漏网。
+
 - [ ] **Step 6: 跑测试确认全绿**
 
 Run: `pnpm --filter @vudt/blocks test && pnpm --filter @vudt/server test && pnpm --filter @vudt/blocks typecheck`
-Expected: PASS。若 `draft.test.ts` 还有红的，检查是不是漏了某处单页覆盖 —— 夹具改造要覆盖文件里**每一处** `landingDraft([...])` 的单页参数。
+Expected: PASS。若还有红的，先查夹具改造是否漏了**每一处**下限覆盖：`landingDraft([...])` 的单页参数（`draft.test.ts`）、`pages` 少于 3 项的覆盖、以及 `pages[N].blocks` 只放一个块的覆盖（`spec-source.test.ts:54`，见 Step 5b）。
 
 - [ ] **Step 7: 提交**
 
 ```bash
-git add packages/templates/blocks/src/draft.ts packages/templates/blocks/src/__tests__/draft.test.ts server/src/__tests__/fixture.ts server/src/__tests__/spec-source.test.ts
+git add packages/templates/blocks/src/draft.ts packages/templates/blocks/src/__tests__/draft.test.ts packages/templates/blocks/src/__tests__/derive.test.ts server/src/__tests__/fixture.ts server/src/__tests__/spec-source.test.ts
 git commit -m "feat(blocks): require at least three pages with two blocks each
 
 「完整站点」是 drafter 的契约，不是 spec 容器的契约 —— spec 仍要允许单页，
