@@ -37,11 +37,16 @@ const DEFAULT_BASE_URL = 'https://api.openai.com/v1'
  * per-slot subject text; geometry is stated as off-limits, because it comes from
  * the sidecar and the code generator and the image generator both read it from
  * there.
+ * Layout components are left out on purpose — see the loop below.
  */
 function renderBlockCatalogue(): string {
   const lines: string[] = []
   for (const component of [...BLOCK_REGISTRY.keys()].sort()) {
     const definition = BLOCK_REGISTRY.get(component)!
+    // Nav and footer are project-level layout: the app shell renders them once
+    // from the spec's own page list. Listing them would offer the model a block
+    // that gate 1 rejects, burning a whole retry on a guaranteed failure.
+    if (definition.layoutOnly === true) continue
     const pageTypes = definition.pageTypes.join(', ')
     const props = Object.entries(definition.props)
       .map(([name, shape]) => `${name} (${shape})`)
@@ -63,9 +68,9 @@ function systemPrompt(): string {
     'Reply with one JSON object only, no prose and no code fences.',
     '',
     'Design process (never output this — think it in your head before writing the JSON):',
-    '- For each page, first outline in 2-3 lines what the page must communicate, who it is for,',
-    '  and in what order the sections should appear. Choose block components that actually',
-    '  serve that outline.',
+    '- First plan the site: list the pages a visitor needs, in the order the nav bar should show',
+    '  them. Then, for each page, outline in 2-3 lines what it must communicate and who it is for,',
+    '  and choose block components that actually serve that outline.',
     '- Then fill copy that is concrete and brand-flavoured, not placeholder text.',
     '- Pick a theme with a distinctive palette (do not default to a generic blue-grey), a',
     '  font pair with character, and radius/spacing/mode that match the page mood.',
@@ -118,8 +123,18 @@ function systemPrompt(): string {
     '  you.',
     '- "content" may be omitted, or list only the slots worth describing; the rest fall back to the',
     '  slot\'s own default. Never invent a slot name, and never send an "assets" key.',
-    '- Keep the page count and the block count small: 1-3 pages, 2-5 blocks per page. Every slot you',
-    '  use costs one image, so prefer a few well-chosen sections over a long page.',
+    '- Plan a small site, not one page: 3-6 pages — a home page plus at least two inner pages a',
+    '  visitor would actually want (pricing, about, docs, contact, sign in).',
+    '- Give each page 2-5 content blocks.',
+    '- "title" is short: 2-6 words. The nav bar uses it verbatim as the link text, and the first',
+    '  auth page\'s title becomes the button at the end of the nav bar — so write the page names a',
+    '  menu would show, not sentences.',
+    '- Any prop named "to" is a destination inside this project: it must be the route of a page you',
+    '  declared in "pages". Never write an anchor such as "#pricing" — an anchor cannot reach',
+    '  another page.',
+    '- NavBarSimple and FooterSimple are project-level layout, not page blocks: the platform renders',
+    '  them once around every page, derived from your own page list. They are not in the catalogue',
+    '  above, and must never appear in "pages".',
     '- Routes must be unique and start with "/". targetStack is always "vue3".',
   ].join('\n')
 }

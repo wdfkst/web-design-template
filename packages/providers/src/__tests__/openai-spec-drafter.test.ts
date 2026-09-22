@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { listBlockComponents } from '@vudt/blocks'
+import { BLOCK_REGISTRY } from '@vudt/blocks'
 import { PageTypeSchema, StyleBibleSchema, ThemeSchema } from '@vudt/spec'
 import { createOpenAISpecDrafter } from '../openai-spec-drafter.js'
 
@@ -114,14 +114,19 @@ describe('createOpenAISpecDrafter', () => {
     expect(calls[0]!.body.response_format).toEqual({ type: 'json_object' })
   })
 
-  test('lists every registered block component in the system prompt', async () => {
+  test('lists every content block in the catalogue and no layout component', async () => {
     const { calls, drafter } = drafterWith(chatReply('{}'))
 
     await drafter.draft({ description: 'a landing page', attempt: 1 })
 
-    const system = calls[0]!.body.messages.find((m) => m.role === 'system')!.content
-    for (const component of listBlockComponents()) {
-      expect(system).toContain(component)
+    const system = systemOf(calls[0]!)
+    for (const definition of BLOCK_REGISTRY.values()) {
+      const listed = new RegExp(`^- ${definition.component} \\[pages: `, 'm').test(system)
+      // Nav and footer are rendered once by the shell, so offering them here
+      // would invite the model to put a second one inside a page.
+      expect(listed, `${definition.component} layoutOnly=${definition.layoutOnly}`).toBe(
+        definition.layoutOnly !== true,
+      )
     }
   })
 
@@ -316,5 +321,48 @@ describe('createOpenAISpecDrafter', () => {
     expect(system).toMatch(/outline/i)
     expect(system).toMatch(/design process/i)
     expect(system).toMatch(/brand-flavoured/i)
+  })
+
+  test('asks for a small site rather than a single page', async () => {
+    const { calls, drafter } = drafterWith(chatReply('{}'))
+
+    await drafter.draft({ description: 'a landing page', attempt: 1 })
+
+    const system = systemOf(calls[0]!)
+    expect(system).toMatch(/3-6 pages/)
+    expect(system).toMatch(/at least two inner pages|home page plus/i)
+    // The line that used to talk the model out of a second page.
+    expect(system).not.toContain('Keep the page count')
+    expect(system).not.toContain('prefer a few well-chosen sections')
+  })
+
+  test('constrains titles, because the nav bar reuses them verbatim', async () => {
+    const { calls, drafter } = drafterWith(chatReply('{}'))
+
+    await drafter.draft({ description: 'a landing page', attempt: 1 })
+
+    const system = systemOf(calls[0]!)
+    expect(system).toMatch(/2-6 words/)
+    expect(system).toMatch(/nav bar/i)
+  })
+
+  test('documents the to-is-a-route convention', async () => {
+    const { calls, drafter } = drafterWith(chatReply('{}'))
+
+    await drafter.draft({ description: 'a landing page', attempt: 1 })
+
+    const system = systemOf(calls[0]!)
+    expect(system).toMatch(/prop named "to"/)
+    expect(system).toMatch(/never write an anchor|#pricing/i)
+  })
+
+  // A draft that is not a site never reaches gate 1, so the prompt has to say so
+  // before the model spends a whole turn on one page.
+  test('states the page and block minimums the draft schema enforces', async () => {
+    const { calls, drafter } = drafterWith(chatReply('{}'))
+
+    await drafter.draft({ description: 'a landing page', attempt: 1 })
+
+    expect(systemOf(calls[0]!)).toMatch(/2-5 content blocks|2-5 blocks/)
   })
 })
