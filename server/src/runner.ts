@@ -53,6 +53,11 @@ export async function runTask(taskId: string, deps: RunnerDeps): Promise<void> {
   try {
     const { spec, attempts } = await draftSpec(deps.drafter(settings.spec), task.description, {
       maxAttempts: deps.specAttempts,
+      // 回调是同步的，store.update 也是同步的：写入顺序与循环顺序严格一致，
+      // 所以 specAttempts 单调不减，前端可以直接渲染。
+      onAttempt: (attempt) => {
+        store.update(taskId, { specAttempts: attempt })
+      },
     })
     store.update(taskId, { status: 'building', spec, specAttempts: attempts })
 
@@ -62,6 +67,9 @@ export async function runTask(taskId: string, deps: RunnerDeps): Promise<void> {
       templateDir: deps.templateDir,
       provider: deps.provider(settings.image),
       maxAssets: deps.maxAssets,
+      onProgress: ({ done, total }) => {
+        store.update(taskId, { assetsDone: done, assetsTotal: total })
+      },
       // node_modules is a junction into the template; a task must never install.
       ...(deps.cache === undefined ? {} : { cache: deps.cache }),
       ...(deps.processor === undefined ? {} : { processor: deps.processor }),

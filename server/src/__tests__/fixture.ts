@@ -146,3 +146,39 @@ export class GatedDrafter implements SpecDrafter {
     return this.result
   }
 }
+
+/**
+ * 放行前先卡住。`parkAt` 指的是第几次 `generate()` 调用被卡住 —— 之前的调用
+ * 正常返回。`reached` 在那次调用进入后立刻 resolve，测试据此拿到一个确定的
+ * 「前 k 张已落盘」观察窗口，而不是靠 sleep 猜。
+ *
+ * 断言之后**拒绝**闸门比放行便宜得多：任务停在图片阶段失败，整段 vite 构建
+ * 就不必跑了。GatedDrafter 用的是同一个套路。
+ */
+export class GatedProvider implements ImageProvider {
+  readonly name = 'gated'
+  readonly requests: ImageRequest[] = []
+  /** `generate()` 被进入 `parkAt` 次之后 resolve。 */
+  readonly reached: Promise<void>
+
+  private readonly gate: Promise<void>
+  private readonly parkAt: number
+  private markReached: () => void = () => {}
+
+  constructor(gate: Promise<void>, parkAt = 1) {
+    this.gate = gate
+    this.parkAt = parkAt
+    this.reached = new Promise((resolve) => {
+      this.markReached = resolve
+    })
+  }
+
+  async generate(request: ImageRequest): Promise<Uint8Array> {
+    this.requests.push(request)
+    if (this.requests.length >= this.parkAt) {
+      this.markReached()
+      await this.gate
+    }
+    return new Uint8Array(ONE_PIXEL_PNG)
+  }
+}

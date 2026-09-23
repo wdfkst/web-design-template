@@ -67,6 +67,8 @@ export interface TaskView {
   previewUrl?: string
   specAttempts?: number
   providerCalls?: number
+  assetsDone?: number
+  assetsTotal?: number
   error?: { message: string; detail?: string }
   settings?: EffectiveSettings
 }
@@ -82,6 +84,8 @@ function toView(task: TaskRecord): TaskView {
     ...(task.previewPath === undefined ? {} : { previewUrl: task.previewPath }),
     ...(task.specAttempts === undefined ? {} : { specAttempts: task.specAttempts }),
     ...(task.providerCalls === undefined ? {} : { providerCalls: task.providerCalls }),
+    ...(task.assetsDone === undefined ? {} : { assetsDone: task.assetsDone }),
+    ...(task.assetsTotal === undefined ? {} : { assetsTotal: task.assetsTotal }),
     ...(task.error === undefined ? {} : { error: task.error }),
     ...(task.settings === undefined ? {} : { settings: task.settings }),
   }

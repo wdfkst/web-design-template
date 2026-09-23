@@ -18,6 +18,10 @@ export interface TaskRecord {
   distDir?: string
   error?: { message: string; detail?: string }
   providerCalls?: number
+  /** 已落盘的 manifest 条目数；building 期间由 runner 逐步写。 */
+  assetsDone?: number
+  /** 本次任务的条目总数（= spec.assets.length）；同上。 */
+  assetsTotal?: number
   specAttempts?: number
   /**
    * The settings this task was created with. Copied at creation so changing

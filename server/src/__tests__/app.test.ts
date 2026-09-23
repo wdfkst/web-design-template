@@ -11,6 +11,7 @@ import type { SpecDrafter } from '../spec-source.js'
 import {
   FailingProvider,
   GatedDrafter,
+  GatedProvider,
   ScriptedDrafter,
   StubProvider,
   landingDraft,
@@ -88,6 +89,24 @@ async function post(harness: Harness, description: string, ownerId?: string) {
     payload: ownerId === undefined ? { description } : { description, ownerId },
   })
 }
+
+type DraftBlock = { component: string; props: Record<string, unknown>; content?: Record<string, unknown> }
+type DraftPage = { route: string; blocks: DraftBlock[] }
+
+/**
+ * 共享草稿加一个带图区块，好让测试卡在**第二**张图上、观察到一个非零的计数器。
+ * 形状对不上就抛错：一份悄悄只剩一张图的草稿会让 `parkAt: 2` 永远等不到，
+ * 测试会挂死而不是失败。
+ */
+function twoImageDraft(): unknown {
+  const draft = landingDraft() as { pages: DraftPage[] }
+  const pricing = draft.pages.find((page) => page.route === '/pricing')
+  const hero = pricing?.blocks.find((block) => block.component === 'HeroCentered')
+  if (hero === undefined) throw new Error('fixture changed: /pricing no longer has a HeroCentered block')
+  hero.content = { backdrop: { prompt: 'a pricing dashboard', alt: 'Pricing dashboard' } }
+  return draft
+}
+
 describe('POST /tasks', () => {
   it('accepts a description and reports a queued task', async () => {
     const harness = await makeApp()
@@ -222,6 +241,77 @@ describe('GET /tasks/:id', () => {
     expect(response.statusCode).toBe(404)
   })
 
+  /**
+   * 本次修复的核心回归测试。改动之前，drafting 期间的响应体在 130 秒里逐字节
+   * 不变 —— 前端是清白的，字段压根没写。队列在 enqueue 时同步泵动，所以
+   * `post` 返回时 runTask 已经同步跑到 `await drafter.draft()` 并停在闸门上。
+   */
+  it('shows the drafting attempt while the model is still working', async () => {
+    let fail = (): void => {}
+    const gate = new Promise<void>((_resolve, reject) => {
+      fail = () => reject(new Error('drafter is down'))
+    })
+    const harness = await makeApp({ drafter: new GatedDrafter(gate, landingDraft()) })
+    track(harness)
+
+    const { id } = (await post(harness, 'a landing page')).json() as { id: string }
+
+    const body = (await harness.app.inject({ method: 'GET', url: `/tasks/${id}` })).json() as {
+      status: string
+      specAttempts?: number
+    }
+    expect(body.status).toBe('drafting')
+    expect(body.specAttempts).toBe(1)
+
+    // Reject rather than release: this test is about the drafting window, and
+    // releasing would pay for a whole real vite build it does not need.
+    fail()
+    await harness.app.vudt.queue.drain()
+  })
+
+  it('shows image progress while building and keeps it after a failure', async () => {
+    let fail = (): void => {}
+    const gate = new Promise<void>((_resolve, reject) => {
+      fail = () => reject(new Error('image provider is down'))
+    })
+    const provider = new GatedProvider(gate, 2)
+
+    const harness = await makeApp({
+      drafter: new ScriptedDrafter([twoImageDraft()]),
+      provider,
+      concurrency: 1,
+    })
+    track(harness)
+
+    const { id } = (await post(harness, 'a landing page')).json() as { id: string }
+
+    // Second image is parked; the first one has already landed and reported.
+    await provider.reached
+    expect(provider.requests).toHaveLength(2)
+
+    const running = (await harness.app.inject({ method: 'GET', url: `/tasks/${id}` })).json() as {
+      status: string
+      assetsDone?: number
+      assetsTotal?: number
+    }
+    expect(running.status).toBe('building')
+    expect(running.assetsDone).toBe(1)
+    expect(running.assetsTotal).toBe(2)
+
+    fail()
+    await harness.app.vudt.queue.drain()
+
+    // Decision 5: a failure keeps what the record had already learned.
+    const failed = (await harness.app.inject({ method: 'GET', url: `/tasks/${id}` })).json() as {
+      status: string
+      assetsDone?: number
+      assetsTotal?: number
+    }
+    expect(failed.status).toBe('failed')
+    expect(failed.assetsDone).toBe(1)
+    expect(failed.assetsTotal).toBe(2)
+  })
+
   it('reports a failure with validator feedback when the model will not comply', async () => {
     const harness = await makeApp({
       drafter: new ScriptedDrafter([{ garbage: true }]),
@@ -234,10 +324,14 @@ describe('GET /tasks/:id', () => {
 
     const body = (await harness.app.inject({ method: 'GET', url: '/tasks/' + id })).json() as {
       status: string
+      specAttempts?: number
       error?: { detail?: string }
     }
     expect(body.status).toBe('failed')
     expect(body.error?.detail).toBeTruthy()
+    // 渐进写意味着一次 drafting 失败会把 specAttempts 留在记录上 —— 这正是
+    // draftDescription() 必须有中性 'failed' 分支的全部理由。
+    expect(body.specAttempts).toBe(1)
   })
 })
 
