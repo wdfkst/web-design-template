@@ -18,3 +18,6 @@ workspaces/
 
 # Playwright MCP browser-session output (console logs, page snapshots, screenshots)
 .playwright-mcp/
+
+# Claude Code per-machine session config (settings, local overrides — not shared)
+.claude/
