@@ -82,6 +82,30 @@ function onSelectPage(nextRoute: string): void {
         <TaskSteps :task="task" />
       </a-card>
 
+      <!--
+        Optional on purpose: the snapshot is written when a task is created, so
+        tasks that predate the settings store (or a restart) simply have none.
+      -->
+      <a-card v-if="task.settings !== undefined" title="本任务使用的模型配置" size="small">
+        <a-descriptions :column="2" size="small">
+          <a-descriptions-item label="文案接口">
+            {{ task.settings.spec.baseUrl }}
+          </a-descriptions-item>
+          <a-descriptions-item label="文案模型">
+            {{ task.settings.spec.model }}
+          </a-descriptions-item>
+          <a-descriptions-item label="JSON 响应格式">
+            {{ task.settings.spec.sendResponseFormat ? '开' : '关' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="图片接口">
+            {{ task.settings.image.baseUrl }}
+          </a-descriptions-item>
+          <a-descriptions-item label="图片模型">
+            {{ task.settings.image.model }}
+          </a-descriptions-item>
+        </a-descriptions>
+      </a-card>
+
       <a-alert v-if="error !== undefined" type="warning" show-icon :message="error" />
 
       <a-layout style="background: transparent">
