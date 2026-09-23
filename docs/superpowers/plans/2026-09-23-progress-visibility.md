@@ -55,6 +55,7 @@
 | `server/src/app.ts` | 对外投影白名单 | 改：`TaskView` + `toView` 各加两个键 |
 | `server/src/__tests__/fixture.ts` | 测试替身 | 改：加 `GatedProvider` |
 | `web/src/components/taskProgress.ts` | 两页共用的**全部**文案与派生逻辑（纯函数，无 Vue） | 新建 |
+| `web/src/api/client.ts` | web 侧的 `TaskView` —— 服务端那份的**手写镜像**，新字段必须两边都加 | 改：加 `assetsDone?` / `assetsTotal?` |
 | `web/src/composables/useNow.ts` | 全应用共享的 1s 时钟；注册表 + active 断言，N 行共用 1 个定时器 | 新建 |
 | `web/src/components/TaskSteps.vue` | 详情页四步 | 改：改 import，逻辑搬走 |
 | `web/src/views/TaskList.vue` | 列表页（用户提交后**停在这一屏**） | 改：加「进度」列 + 时钟 |
@@ -611,11 +612,14 @@ Co-Authored-By: Claude Code <noreply@anthropic.com>"
 
 **Files:**
 - Create: `web/src/components/taskProgress.ts`
+- Modify: `web/src/api/client.ts:6`（web 侧的 `TaskView` —— 见下）
 - Test: `web/src/components/__tests__/taskProgress.test.ts`
 
 **Interfaces:**
 - Consumes: `TaskView`（`web/src/api/client.ts:6`）
-- Produces: `currentStep(task): number`、`stepStatus(task): 'error' | 'process'`、`draftDescription(task): string`、`buildDescription(task): string`、`progressLabel(task): string`、`elapsedLabel(task, now): string`
+- Produces: `currentStep(task): number`、`stepStatus(task): error | process`、`draftDescription(task): string`、`buildDescription(task): string`、`progressLabel(task): string`、`elapsedLabel(task, now): string`
+
+> **web 的 `TaskView` 是独立声明，必须同步。** `server/src/app.ts` 的 `TaskView` 与 `web/src/api/client.ts` 的 `TaskView` 是两份手写的镜像（web 不 import 服务端代码）。Task 4 只改了服务端那份；本任务的 `taskProgress.ts` 读的是 web 这份，不补 `assetsDone`/`assetsTotal` 就编译不过 —— 这是预检扫描抓到的 plan 缺陷。
 
 - [ ] **Step 1: 写失败的测试**
 
@@ -769,7 +773,14 @@ Expected: FAIL —— `../taskProgress.js` 不存在。
 
 - [ ] **Step 3: 实现**
 
-新建 `web/src/components/taskProgress.ts`：
+先补 web 侧的投影类型 —— `web/src/api/client.ts` 的 `TaskView`（`:6`）在 `providerCalls?: number` 之后加两行，与 Task 4 加在服务端那份上的**逐字一致**：
+
+```ts
+  assetsDone?: number
+  assetsTotal?: number
+```
+
+然后新建 `web/src/components/taskProgress.ts`：
 
 ```ts
 import type { TaskView } from '../api/client.js'
@@ -861,18 +872,19 @@ export function elapsedLabel(task: TaskView, now: number): string {
 }
 ```
 
-- [ ] **Step 4: 跑测试确认它绿**
+- [ ] **Step 4: 跑测试与类型检查确认它绿**
 
 ```bash
 pnpm --filter @vudt/web test -- taskProgress.test.ts
+pnpm --filter @vudt/web typecheck
 ```
 
-Expected: PASS，新文件一条、全绿。
+Expected: 两条都 exit 0。**typecheck 是这一步的必跑项** —— `taskProgress.ts` 读 `assetsDone`/`assetsTotal`，而 web 的 `TaskView` 是手写镜像，漏补字段在 vitest 里不会报（vitest 不做类型检查），只有在 typecheck 里才现形。
 
 - [ ] **Step 5: 提交**
 
 ```bash
-git add web/src/components/taskProgress.ts web/src/components/__tests__/taskProgress.test.ts
+git add web/src/api/client.ts web/src/components/taskProgress.ts web/src/components/__tests__/taskProgress.test.ts
 git commit -m "feat(web): extract task progress phrasing into tested functions
 
 Co-Authored-By: Claude Code <noreply@anthropic.com>"
