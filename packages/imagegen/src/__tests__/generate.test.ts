@@ -6,7 +6,7 @@ import { finalizeSpec } from '@vudt/spec'
 import { afterEach, describe, expect, it } from 'vitest'
 import { MemoryImageCache } from '../cache.js'
 import { ImagegenError } from '../errors.js'
-import { generateAssets, planAssetJobs } from '../generate.js'
+import { generateAssets, planAssetJobs, type AssetsProgress } from '../generate.js'
 import { landingSpec } from './fixture.js'
 import { StubProcessor, StubProvider } from './stub-provider.js'
 
@@ -146,5 +146,45 @@ describe('generateAssets', () => {
     await expect(
       generateAssets(spec, { provider, outDir: await tempOut() }),
     ).rejects.toThrow(ImagegenError)
+  })
+
+  it('reports progress before and after every asset', async () => {
+    const spec = landingSpec()
+    const seen: AssetsProgress[] = []
+
+    const result = await generateAssets(spec, {
+      provider: new StubProvider(),
+      outDir: await tempOut(),
+      onProgress: (progress) => seen.push(progress),
+    })
+
+    expect(seen[0]).toEqual({ done: 0, total: spec.assets.length })
+    expect(seen.at(-1)).toEqual({ done: spec.assets.length, total: spec.assets.length })
+    expect(seen).toHaveLength(spec.assets.length + 1)
+    // Strictly one step per entry: the counter never stalls and never skips.
+    expect(seen.map((progress) => progress.done)).toEqual(
+      Array.from({ length: spec.assets.length + 1 }, (_, index) => index),
+    )
+    expect(result.assets).toHaveLength(spec.assets.length)
+  })
+
+  it('counts a cache hit as progress even though it makes no provider call', async () => {
+    const spec = landingSpec()
+    const cache = new MemoryImageCache()
+    // Warm the cache with a throwaway provider, then measure a run that must hit it.
+    await generateAssets(spec, { provider: new StubProvider(), outDir: await tempOut(), cache })
+
+    const seen: AssetsProgress[] = []
+    const provider = new StubProvider()
+    const result = await generateAssets(spec, {
+      provider,
+      outDir: await tempOut(),
+      cache,
+      onProgress: (progress) => seen.push(progress),
+    })
+
+    expect(provider.requests).toHaveLength(0)
+    expect(result.providerCalls).toBe(0)
+    expect(seen.at(-1)).toEqual({ done: spec.assets.length, total: spec.assets.length })
   })
 })

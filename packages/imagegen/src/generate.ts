@@ -8,6 +8,15 @@ import { buildPrompt } from './prompt.js'
 import type { AssetJob, ImageProcessor, ImageProvider } from './provider.js'
 import { DEFAULT_SIZE_TIERS, pickSizeTier, type SizeTier } from './size.js'
 
+/**
+ * 已落盘条目数 / 本次任务的条目总数。`done` 数的是 manifest 条目 —— 缓存命中
+ * 与内容去重都算，所以它恒有 `done >= providerCalls`，且它才是「已出 N 张图」。
+ */
+export interface AssetsProgress {
+  done: number
+  total: number
+}
+
 export interface GenerateAssetsOptions {
   provider: ImageProvider
   /** Project root the generated files land in — same directory codegen wrote. */
@@ -15,6 +24,8 @@ export interface GenerateAssetsOptions {
   cache?: ImageCache
   processor?: ImageProcessor
   tiers?: readonly SizeTier[]
+  /** 循环开始前发一次 `{done: 0, total}`，其后每落盘一条发一次。 */
+  onProgress?: (progress: AssetsProgress) => void
 }
 
 export interface GeneratedAsset {
@@ -80,10 +91,14 @@ export async function generateAssets(
   const cache = options.cache ?? NO_CACHE
   const outDir = resolve(options.outDir)
   const jobs = planAssetJobs(spec, options.tiers ?? DEFAULT_SIZE_TIERS)
+  const onProgress = options.onProgress
 
   const produced = new Map<string, Uint8Array>()
   const assets: GeneratedAsset[] = []
   let providerCalls = 0
+
+  // 首发在循环之前：计数器在进入图片环节时立刻出现，而不是等第一张图落盘。
+  onProgress?.({ done: 0, total: jobs.length })
 
   for (const job of jobs) {
     const hash = job.asset.contentHash
@@ -121,6 +136,7 @@ export async function generateAssets(
       bytes: png.length,
       cached,
     })
+    onProgress?.({ done: assets.length, total: jobs.length })
   }
 
   return { assets, providerCalls }
