@@ -22,9 +22,16 @@ export function renderApp(spec: ProjectSpec): string {
   const attrs = [`  :brand="brand"`, `  :links="links"`]
 
   if (shell === 'AppShell') {
-    consts.push(`const cta = ${cta === undefined ? 'undefined' : linkLiteral(cta)}`)
+    // `planLayout` leaves `cta` absent rather than undefined so the two cases stay
+    // distinguishable — binding `:cta` to a dead `undefined` const would throw that
+    // distinction away. `cta` is an optional prop on AppShell, so omitting the
+    // binding and passing `undefined` are the same thing at runtime.
+    if (cta !== undefined) {
+      consts.push(`const cta = ${linkLiteral(cta)}`)
+      attrs.push(`  :cta="cta"`)
+    }
     consts.push(`const note = ${JSON.stringify(note)}`)
-    attrs.push(`  :cta="cta"`, `  :note="note"`)
+    attrs.push(`  :note="note"`)
   } else if (cta !== undefined) {
     // The sidebar shell has a cta slot too: an auth page is in no nav entry, so
     // this button is its only way in.

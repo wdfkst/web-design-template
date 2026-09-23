@@ -72,6 +72,20 @@ describe('renderApp', () => {
     expect(sfc).not.toContain('const note')
   })
 
+  // `planLayout` omits the cta key rather than setting it to undefined so this
+  // branch can tell the two cases apart; emitting `const cta = undefined` next to
+  // `:cta="cta"` hands the shell a dead prop it cannot distinguish from a real one,
+  // and defeats exactly that.
+  it('emits no cta const at all when an AppShell project has no auth page', () => {
+    const spec = withPages(landingSpec(), [page('/', 'Home', 'landing')])
+    const sfc = renderApp(spec)
+
+    expect(sfc).toContain(`import AppShell from './layouts/AppShell.vue'`)
+    expect(sfc).not.toContain('const cta')
+    expect(sfc).not.toContain(':cta=')
+    expect(sfc).toContain('const note = ')
+  })
+
   it('is deterministic: same spec in, byte-identical output out', () => {
     expect(renderApp(landingSpec())).toBe(renderApp(landingSpec()))
   })

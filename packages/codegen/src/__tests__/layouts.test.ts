@@ -30,6 +30,17 @@ describe('pickShell', () => {
       expect(pickShell(spec)).toBe('SidebarShell')
     })
   }
+
+  // `form` has always landed on the AppShell — but only by falling through the
+  // `SIDEBAR_PAGE_TYPES.includes()` check. The Record turns that into a written
+  // decision; this pins it so a new page type cannot drift to a shell unnoticed.
+  it('sends a form page to the AppShell', () => {
+    const spec = withPages(landingSpec(), [
+      page('/', 'Home', 'landing'),
+      page('/contact', 'Contact', 'form'),
+    ])
+    expect(pickShell(spec)).toBe('AppShell')
+  })
 })
 
 describe('navLinks', () => {

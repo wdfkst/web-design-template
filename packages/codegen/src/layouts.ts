@@ -1,4 +1,4 @@
-import type { ProjectSpec } from '@vudt/spec'
+import type { PageType, ProjectSpec } from '@vudt/spec'
 
 /** The layout component a project renders once around every page. */
 export type ShellName = 'AppShell' | 'SidebarShell'
@@ -18,16 +18,28 @@ export interface LayoutPlan {
 }
 
 /**
- * Page types that want a sidebar rather than a top bar. Derived rather than
- * declared as `spec.layout`, because adding that field would mean touching the
- * spec schema for a preference the page types already express.
+ * The shell each page type wants. Derived rather than declared as `spec.layout`,
+ * because adding that field would mean touching the spec schema for a preference
+ * the page types already express.
+ *
+ * Written as a complete `Record` rather than a list of sidebar types on purpose:
+ * a `readonly PageType[]` would not constrain exhaustiveness, so a seventh page
+ * type added to `PageTypeSchema` would silently keep falling through to AppShell.
+ * This form turns that into a compile error.
  */
-const SIDEBAR_PAGE_TYPES: readonly string[] = ['dashboard', 'settings', 'list-detail']
+const SHELL_BY_PAGE_TYPE: Record<PageType, ShellName> = {
+  landing: 'AppShell',
+  auth: 'AppShell',
+  form: 'AppShell',
+  dashboard: 'SidebarShell',
+  settings: 'SidebarShell',
+  'list-detail': 'SidebarShell',
+}
 
 const NOTE_LIMIT = 140
 
 export function pickShell(spec: ProjectSpec): ShellName {
-  return spec.pages.some((page) => SIDEBAR_PAGE_TYPES.includes(page.pageType))
+  return spec.pages.some((page) => SHELL_BY_PAGE_TYPE[page.pageType] === 'SidebarShell')
     ? 'SidebarShell'
     : 'AppShell'
 }
