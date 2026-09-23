@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ServerError } from '../errors.js'
-import { draftSpec } from '../spec-source.js'
+import { draftSpec, type SpecDrafter } from '../spec-source.js'
 import { ScriptedDrafter, landingDraft } from './fixture.js'
 
 describe('draftSpec', () => {
@@ -91,19 +91,31 @@ describe('draftSpec', () => {
   })
 
   it('reports each attempt number before the model is asked', async () => {
-    // Three junk drafts: every attempt is rejected, so all three are reported.
-    const drafter = new ScriptedDrafter([{ garbage: true }])
+    // One junk draft is replayed on every attempt, so all three are rejected.
+    const base = new ScriptedDrafter([{ garbage: true }])
+    const log: string[] = []
+    const drafter: SpecDrafter = {
+      name: 'logging',
+      draft: (request) => {
+        log.push('draft')
+        return base.draft(request)
+      },
+    }
     const seen: number[] = []
 
     await expect(
       draftSpec(drafter, 'a landing page', {
         maxAttempts: 3,
-        onAttempt: (attempt) => seen.push(attempt),
+        onAttempt: (attempt) => {
+          log.push(`attempt:${attempt}`)
+          seen.push(attempt)
+        },
       }),
     ).rejects.toThrow()
 
+    expect(log).toEqual(['attempt:1', 'draft', 'attempt:2', 'draft', 'attempt:3', 'draft'])
     expect(seen).toEqual([1, 2, 3])
     // One report per model call — the callback is not a progress bar of its own.
-    expect(seen).toHaveLength(drafter.requests.length)
+    expect(seen).toHaveLength(base.requests.length)
   })
 })
