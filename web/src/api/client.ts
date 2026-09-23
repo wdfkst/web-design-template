@@ -12,6 +12,8 @@ export interface TaskView {
   previewUrl?: string
   specAttempts?: number
   providerCalls?: number
+  assetsDone?: number
+  assetsTotal?: number
   error?: { message: string; detail?: string }
   /** Snapshot taken when the task was created; Task 9 renders it. */
   settings?: EffectiveSettings
