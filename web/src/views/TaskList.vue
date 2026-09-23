@@ -2,12 +2,26 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTaskList } from '../composables/useTaskList.js'
-import type { TaskStatus } from '../api/client.js'
+import { ACTIVE_STATUSES } from '../api/client.js'
+import type { TaskStatus, TaskView } from '../api/client.js'
+import { useNow } from '../composables/useNow.js'
+import { elapsedLabel, progressLabel } from '../components/taskProgress.js'
 
 const router = useRouter()
 const { tasks, loading, error, start, submit } = useTaskList()
 const description = ref('')
 const submitting = ref(false)
+
+// 全表 N 行共用这一个时钟；全是终态任务时它不推进，也就不会重渲染。
+const { now } = useNow(() => tasks.value.some((task) => ACTIVE_STATUSES.includes(task.status)))
+
+function progressText(task: TaskView): string {
+  return progressLabel(task)
+}
+
+function elapsedText(task: TaskView): string {
+  return elapsedLabel(task, now.value)
+}
 
 onMounted(start)
 
@@ -28,6 +42,7 @@ function statusColor(status: TaskStatus): string {
 const columns = [
   { title: '描述', dataIndex: 'description', key: 'description', ellipsis: true },
   { title: '状态', dataIndex: 'status', key: 'status', width: 120 },
+  { title: '进度', key: 'progress', width: 220 },
   { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180 },
   { title: '图片调用', dataIndex: 'providerCalls', key: 'providerCalls', width: 100 },
   { title: '', key: 'actions', width: 100 },
@@ -81,6 +96,10 @@ function formatTime(value: number): string {
           <template v-if="column.key === 'status'">
             <a-tag :color="statusColor(record.status)">{{ record.status }}</a-tag>
           </template>
+          <template v-else-if="column.key === 'progress'">
+            {{ progressText(record) }}
+            <span class="task-list__elapsed">{{ elapsedText(record) }}</span>
+          </template>
           <template v-else-if="column.key === 'createdAt'">
             {{ formatTime(record.createdAt) }}
           </template>
@@ -92,3 +111,10 @@ function formatTime(value: number): string {
     </a-card>
   </a-space>
 </template>
+
+<style scoped>
+.task-list__elapsed {
+  margin-left: 8px;
+  color: rgba(0, 0, 0, 0.45);
+}
+</style>

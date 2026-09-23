@@ -1,52 +1,34 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { ACTIVE_STATUSES } from '../api/client.js'
 import type { TaskView } from '../api/client.js'
+import { useNow } from '../composables/useNow.js'
+import {
+  buildDescription,
+  currentStep,
+  draftDescription,
+  elapsedLabel,
+  stepStatus,
+} from './taskProgress.js'
 
 const props = defineProps<{ task: TaskView }>()
 
-/**
- * Four steps against five server statuses: 'building' covers both image
- * generation and the vite build. providerCalls carries the sub-progress, which
- * beats inventing a status the runner would have to maintain.
- */
-const currentStep = computed(() => {
-  switch (props.task.status) {
-    case 'queued':
-      return 0
-    case 'drafting':
-      return 1
-    case 'building':
-      return 2
-    default:
-      return 3
-  }
-})
+// 终态任务不再走表：这是「无残留定时器」那条纪律在页面上的落点。
+const { now } = useNow(() => ACTIVE_STATUSES.includes(props.task.status))
 
-const status = computed(() => (props.task.status === 'failed' ? 'error' : 'process'))
-
-const buildDescription = computed(() =>
-  props.task.providerCalls === undefined
-    ? '生成图片 + vite build'
-    : `已生成 ${props.task.providerCalls} 张图`,
-)
-
-const draftDescription = computed(() =>
-  props.task.specAttempts === undefined ? 'LLM 产出 spec' : `第 ${props.task.specAttempts} 次尝试通过`,
-)
-
-const elapsed = computed(() => {
-  const { createdAt, finishedAt } = props.task
-  if (finishedAt === undefined) return undefined
-  return `${((finishedAt - createdAt) / 1000).toFixed(1)}s`
-})
+const step = computed(() => currentStep(props.task))
+const status = computed(() => stepStatus(props.task))
+const draftText = computed(() => draftDescription(props.task))
+const buildText = computed(() => buildDescription(props.task))
+const elapsed = computed(() => elapsedLabel(props.task, now.value))
 </script>
 
 <template>
   <a-space direction="vertical" size="middle" style="width: 100%">
-    <a-steps :current="currentStep" :status="status" size="small">
+    <a-steps :current="step" :status="status" size="small">
       <a-step title="排队" />
-      <a-step title="draft spec" :description="draftDescription" />
-      <a-step title="构建" :description="buildDescription" />
+      <a-step title="draft spec" :description="draftText" />
+      <a-step title="构建" :description="buildText" />
       <a-step title="完成" :description="elapsed" />
     </a-steps>
 
