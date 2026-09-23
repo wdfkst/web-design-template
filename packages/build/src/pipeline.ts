@@ -1,7 +1,14 @@
 import { readdir, stat } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { writeProject, type WriteResult } from '@vudt/codegen'
-import { generateAssets, type GenerateAssetsResult, type ImageCache, type ImageProcessor, type ImageProvider } from '@vudt/imagegen'
+import {
+  generateAssets,
+  type AssetsProgress,
+  type GenerateAssetsResult,
+  type ImageCache,
+  type ImageProcessor,
+  type ImageProvider,
+} from '@vudt/imagegen'
 import type { ProjectSpec } from '@vudt/spec'
 import { BuildError } from './errors.js'
 import { runNodeSandboxed, tail, type SandboxResult } from './sandbox.js'
@@ -23,6 +30,8 @@ export interface BuildTaskOptions {
   /** Refuses the task when the spec declares more images than this. */
   maxAssets?: number
   limits?: BuildLimits
+  /** 原样转发 `generateAssets` 的图片进度；阶段划分由调用方派生。 */
+  onProgress?: (progress: AssetsProgress) => void
   /** Skipped by default: vite build is the gate that matters for preview. */
   typecheck?: boolean
 }
@@ -74,6 +83,7 @@ export async function buildTask(
   const images = await generateAssets(spec, {
     provider,
     outDir: projectDir,
+    ...(options.onProgress === undefined ? {} : { onProgress: options.onProgress }),
     ...(options.cache !== undefined ? { cache: options.cache } : {}),
     ...(options.processor !== undefined ? { processor: options.processor } : {}),
   })

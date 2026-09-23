@@ -1,7 +1,12 @@
 import { mkdtemp, readFile, readdir, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { MemoryImageCache, type ImageProvider, type ImageRequest } from '@vudt/imagegen'
+import {
+  MemoryImageCache,
+  type AssetsProgress,
+  type ImageProvider,
+  type ImageRequest,
+} from '@vudt/imagegen'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { BuildError } from '../errors.js'
 import { buildTask } from '../pipeline.js'
@@ -134,4 +139,20 @@ describe('buildTask', () => {
     expect(error).toBeInstanceOf(BuildError)
     expect((error as BuildError).message).toMatch(/killed|failed/)
   }, 60_000)
+
+  it('forwards image progress to its own caller', async () => {
+    const workspace = await root.allocate('task-progress')
+    const spec = landingSpec()
+    const seen: AssetsProgress[] = []
+
+    await buildTask(spec, {
+      workspace,
+      templateDir: TEMPLATE_DIR,
+      provider: new PngProvider(),
+      onProgress: (progress) => seen.push(progress),
+    })
+
+    expect(seen[0]).toEqual({ done: 0, total: spec.assets.length })
+    expect(seen.at(-1)).toEqual({ done: spec.assets.length, total: spec.assets.length })
+  })
 })
