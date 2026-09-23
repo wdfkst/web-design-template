@@ -363,6 +363,10 @@ describe('createOpenAISpecDrafter', () => {
 
     await drafter.draft({ description: 'a landing page', attempt: 1 })
 
-    expect(systemOf(calls[0]!)).toMatch(/2-5 content blocks|2-5 blocks/)
+    const system = systemOf(calls[0]!)
+    // The page floor is the invariant this whole task exists to reinforce, so it
+    // gets a guard here rather than only in the "asks for a small site" test.
+    expect(system).toMatch(/3-6 pages/)
+    expect(system).toMatch(/2-5 content blocks/)
   })
 })
