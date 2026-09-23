@@ -368,5 +368,12 @@ describe('createOpenAISpecDrafter', () => {
     // gets a guard here rather than only in the "asks for a small site" test.
     expect(system).toMatch(/3-6 pages/)
     expect(system).toMatch(/2-5 content blocks/)
+    // The natural sign-in page is a single AuthPanel, which the draft schema
+    // rejects; the floor has to be stated as a floor, or the model keeps
+    // spending its retries discovering that.
+    expect(system).toMatch(/never fewer than 2/)
+    // A slot name belongs to one block. The model kept handing CtaBanner the
+    // "illustration" slot that HeroSplit owns instead of its own "decoration".
+    expect(system).toMatch(/CtaBanner's is "decoration"/)
   })
 })
