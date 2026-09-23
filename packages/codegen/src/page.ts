@@ -1,5 +1,5 @@
 import type { Asset, Page, ProjectSpec } from '@vudt/spec'
-import { getBlockDefinition, getSlot } from '@vudt/blocks'
+import { assertCtaTargets, BlockDerivationError, getBlockDefinition, getSlot } from '@vudt/blocks'
 import { CodegenError } from './errors.js'
 import { assetHref, pageComponentName } from './naming.js'
 
@@ -125,6 +125,22 @@ export function renderPage(spec: ProjectSpec, page: Page): string {
     }
 
     usages.push(renderTag(block.component, attrs))
+  }
+
+  // A spec does not have to come from the draft path here either — a hand-edited
+  // spec reaches this function directly, and `props` is `z.unknown` in the schema,
+  // so a bad `to` gets this far. It would render a dead <router-link>: a blank
+  // page with no error at all, which is the exact symptom this series exists to
+  // remove. The draft path keeps its own copy of this check because its error
+  // text is fed back to the model as a retry turn.
+  const routes = new Set(spec.pages.map((declared) => declared.route))
+  try {
+    assertCtaTargets(page.route, page.blocks, routes)
+  } catch (error) {
+    // The message already names the route, the prop path, the offending value and
+    // every declared route, so it is re-thrown verbatim under this module's error.
+    if (error instanceof BlockDerivationError) throw new CodegenError(error.message)
+    throw error
   }
 
   const scriptLines = [

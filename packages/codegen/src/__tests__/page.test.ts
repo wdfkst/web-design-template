@@ -156,4 +156,36 @@ describe('renderPage contract violations', () => {
     }
     expect(() => renderPage(broken, broken.pages[0]!)).toThrow(/unknown component/)
   })
+
+  it('throws when a block names a route no page declares', () => {
+    const spec = landingSpec()
+    const page = homePage(spec)
+    // Only the `to` string changes. The other two pages stay declared and every
+    // component, slot, asset and binding stays legal, so the new gate is the one
+    // and only thing in here that can throw.
+    const broken: ProjectSpec = {
+      ...spec,
+      pages: spec.pages.map((candidate) =>
+        candidate.route !== '/'
+          ? candidate
+          : {
+              ...candidate,
+              blocks: candidate.blocks.map((block, index) =>
+                index === 0
+                  ? {
+                      ...block,
+                      props: {
+                        ...block.props,
+                        primaryCta: { label: 'See pricing', to: '/nope' },
+                      },
+                    }
+                  : block,
+              ),
+            },
+      ),
+    }
+    expect(() => renderPage(broken, homePage(broken))).toThrow(CodegenError)
+    expect(() => renderPage(broken, homePage(broken))).toThrow(/not a declared route/)
+    expect(() => renderPage(broken, homePage(broken))).toThrow(/"\/nope"/)
+  })
 })
