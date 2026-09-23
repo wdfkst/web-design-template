@@ -159,7 +159,6 @@ describe('renderPage contract violations', () => {
 
   it('throws when a block names a route no page declares', () => {
     const spec = landingSpec()
-    const page = homePage(spec)
     // Only the `to` string changes. The other two pages stay declared and every
     // component, slot, asset and binding stays legal, so the new gate is the one
     // and only thing in here that can throw.

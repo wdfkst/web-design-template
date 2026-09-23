@@ -21,22 +21,24 @@ export function renderApp(spec: ProjectSpec): string {
   ]
   const attrs = [`  :brand="brand"`, `  :links="links"`]
 
-  if (shell === 'AppShell') {
-    // `planLayout` leaves `cta` absent rather than undefined so the two cases stay
-    // distinguishable — binding `:cta` to a dead `undefined` const would throw that
-    // distinction away. `cta` is an optional prop on AppShell, so omitting the
-    // binding and passing `undefined` are the same thing at runtime.
-    if (cta !== undefined) {
-      consts.push(`const cta = ${linkLiteral(cta)}`)
-      attrs.push(`  :cta="cta"`)
-    }
-    consts.push(`const note = ${JSON.stringify(note)}`)
-    attrs.push(`  :note="note"`)
-  } else if (cta !== undefined) {
-    // The sidebar shell has a cta slot too: an auth page is in no nav entry, so
-    // this button is its only way in.
+  // `planLayout` leaves `cta` absent rather than undefined so the two cases stay
+  // distinguishable — binding `:cta` to a dead `undefined` const would throw that
+  // distinction away. `cta` is an optional prop on both AppShell and SidebarShell
+  // (`cta?: NavLink` in each), so omitting the binding and passing `undefined` are
+  // the same thing at runtime.
+  //
+  // Emitted once, outside the per-shell branches. Both shells take a cta: on the
+  // sidebar it is an auth page's only way in, since an auth page appears in no nav
+  // entry. Keeping one copy is the point — when this was branched per shell, one
+  // branch emitted a dead `const cta = undefined` and the other did not.
+  if (cta !== undefined) {
     consts.push(`const cta = ${linkLiteral(cta)}`)
     attrs.push(`  :cta="cta"`)
+  }
+
+  if (shell === 'AppShell') {
+    consts.push(`const note = ${JSON.stringify(note)}`)
+    attrs.push(`  :note="note"`)
   }
 
   attrs.push(`  :chromeless="chromeless"`)
