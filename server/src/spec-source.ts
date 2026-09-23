@@ -20,6 +20,8 @@ export interface SpecDrafter {
 
 export interface DraftSpecOptions {
   maxAttempts?: number
+  /** 每次尝试的模型调用之前触发，1-based。 */
+  onAttempt?: (attempt: number) => void
 }
 
 const DEFAULT_MAX_ATTEMPTS = 3
@@ -46,6 +48,7 @@ export async function draftSpec(
   let feedback: string | undefined
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    options.onAttempt?.(attempt)
     const raw = await drafter.draft(
       feedback === undefined ? { description, attempt } : { description, feedback, attempt },
     )

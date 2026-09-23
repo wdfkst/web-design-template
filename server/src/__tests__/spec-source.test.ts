@@ -89,4 +89,21 @@ describe('draftSpec', () => {
     expect(caught).toBeInstanceOf(ServerError)
     expect((caught as ServerError).detail).toMatch(/duplicate route/)
   })
+
+  it('reports each attempt number before the model is asked', async () => {
+    // Three junk drafts: every attempt is rejected, so all three are reported.
+    const drafter = new ScriptedDrafter([{ garbage: true }])
+    const seen: number[] = []
+
+    await expect(
+      draftSpec(drafter, 'a landing page', {
+        maxAttempts: 3,
+        onAttempt: (attempt) => seen.push(attempt),
+      }),
+    ).rejects.toThrow()
+
+    expect(seen).toEqual([1, 2, 3])
+    // One report per model call — the callback is not a progress bar of its own.
+    expect(seen).toHaveLength(drafter.requests.length)
+  })
 })
