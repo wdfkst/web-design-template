@@ -284,28 +284,48 @@ Co-Authored-By: Claude Code <noreply@anthropic.com>"
 
 - [ ] **Step 1: 写失败的测试**
 
-在 `server/src/__tests__/spec-source.test.ts` 的 `describe` 内追加：
+`server/src/__tests__/spec-source.test.ts:3` 的 import 补上 `type SpecDrafter`（与 `draftSpec` 同一个模块），然后在 `describe` 内追加：
 
 ```ts
   it('reports each attempt number before the model is asked', async () => {
-    // Three junk drafts: every attempt is rejected, so all three are reported.
-    const drafter = new ScriptedDrafter([{ garbage: true }])
+    // One junk draft, replayed: every attempt is rejected, so all three are reported.
+    const base = new ScriptedDrafter([{ garbage: true }])
+    const log: string[] = []
+    // The drafter writes into the same log as the callback. That is what pins the
+    // *order* — callback before model call — which a `seen`-only assertion does not:
+    // the loop runs three times either way, so moving the emit below the `await`
+    // would still produce [1, 2, 3] and pass.
+    const drafter: SpecDrafter = {
+      name: 'logging',
+      draft: (request) => {
+        log.push('draft')
+        return base.draft(request)
+      },
+    }
     const seen: number[] = []
 
     await expect(
       draftSpec(drafter, 'a landing page', {
         maxAttempts: 3,
-        onAttempt: (attempt) => seen.push(attempt),
+        onAttempt: (attempt) => {
+          log.push(`attempt:${attempt}`)
+          seen.push(attempt)
+        },
       }),
     ).rejects.toThrow()
 
+    expect(log).toEqual(['attempt:1', 'draft', 'attempt:2', 'draft', 'attempt:3', 'draft'])
     expect(seen).toEqual([1, 2, 3])
     // One report per model call — the callback is not a progress bar of its own.
-    expect(seen).toHaveLength(drafter.requests.length)
+    expect(seen).toHaveLength(base.requests.length)
   })
 ```
 
 `ScriptedDrafter` 会把同一份垃圾草稿反复交出（该文件已有的失败用例就是这么构造的），所以三次尝试都不通过。
+
+这条测试的**价值全在 `log` 那条断言上**：只断言 `seen === [1,2,3]` 是不够的 —— 三次都被拒绝，循环无论如何都跑三次、`draft` 无论如何都被调用三次，所以把发射挪到 `await drafter.draft(...)` **之后**照样能通过。而发射时机正是本任务存在的理由：真任务里 drafting 一次要 130s，发射在模型调用之后意味着这 130s 里界面什么都不显示 —— 那就是本次要修的原始 bug。
+
+因此**Step 5 是一步变异验证**：把 `server/src/spec-source.ts` 里的 `options.onAttempt?.(attempt)` 临时挪到 `await drafter.draft(...)` 下面，跑同一条测试确认它**变红**（红的必须是 `log` 那条断言），再挪回去确认转绿。这个来回就是这条守卫有效的证据。
 
 - [ ] **Step 2: 跑测试确认它红**
 
@@ -341,7 +361,19 @@ pnpm --filter @vudt/server test -- spec-source.test.ts
 
 Expected: PASS。
 
-- [ ] **Step 5: 提交**
+- [ ] **Step 5: 变异验证 —— 证明这条守卫真的会咬**
+
+把 `server/src/spec-source.ts` 里刚插入的 `options.onAttempt?.(attempt)` **临时挪到** `const raw = await drafter.draft(...)` 的**下面**：
+
+```bash
+pnpm --filter @vudt/server test -- spec-source.test.ts
+```
+
+Expected: **FAIL**，且红的必须是 `expect(log).toEqual([...])` 那条 —— 若它仍然绿，说明 `log` 断言没有真正钉住顺序，要回去改测试而不是改实现。
+
+确认变红后把那一行挪回原位，再跑一次确认 PASS。
+
+- [ ] **Step 6: 提交**
 
 ```bash
 git add server/src/spec-source.ts server/src/__tests__/spec-source.test.ts
