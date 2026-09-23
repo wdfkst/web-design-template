@@ -18,7 +18,7 @@ withDefaults(
 </script>
 
 <template>
-  <section id="cta" class="section cta">
+  <section class="section cta">
     <!-- geometry mirrors CtaBanner.slots.ts: decoration 16:9 1280x720, subject-right -->
     <img
       v-if="assets.decoration"
