@@ -954,47 +954,62 @@ describe('useNow', () => {
   })
 
   it('shares one clock between consumers', async () => {
-    vi.setSystemTime(1_000)
     const first = useNow(() => true)
     const second = useNow(() => true)
 
-    expect(first.now).toBe(second.now)
-    expect(vi.getTimerCount()).toBe(1)
+    try {
+      expect(first.now).toBe(second.now)
+      expect(vi.getTimerCount()).toBe(1)
 
-    vi.setSystemTime(1_400)
-    await vi.advanceTimersByTimeAsync(1_000)
-    expect(first.now.value).toBe(1_400)
-
-    first.stop()
-    second.stop()
+      // 推进一个间隔后，共享值应当跟上系统时间 —— 时钟确实在走，且两个消费者读的是同一个。
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(first.now.value).toBe(Date.now())
+    } finally {
+      first.stop()
+      second.stop()
+    }
   })
 
   it('does not advance while no consumer is active', async () => {
     const idle = useNow(() => false)
-    const before = idle.now.value
 
-    vi.setSystemTime(Date.now() + 3_000)
-    await vi.advanceTimersByTimeAsync(3_000)
+    try {
+      const before = idle.now.value
 
-    expect(idle.now.value).toBe(before)
-    idle.stop()
+      vi.setSystemTime(Date.now() + 3_000)
+      await vi.advanceTimersByTimeAsync(3_000)
+
+      expect(idle.now.value).toBe(before)
+    } finally {
+      idle.stop()
+    }
   })
 
   it('clears the interval once every consumer is gone', () => {
     const first = useNow(() => true)
     const second = useNow(() => true)
-    expect(vi.getTimerCount()).toBe(1)
 
-    first.stop()
-    expect(vi.getTimerCount()).toBe(1)
+    try {
+      expect(vi.getTimerCount()).toBe(1)
 
-    second.stop()
-    expect(vi.getTimerCount()).toBe(0)
+      first.stop()
+      expect(vi.getTimerCount()).toBe(1)
+
+      second.stop()
+      expect(vi.getTimerCount()).toBe(0)
+    } finally {
+      first.stop()
+      second.stop()
+    }
   })
 })
 ```
 
 第二条用例断言的是「值没变」而不是某个具体时刻 —— `now` 是模块级的，跨用例带着上一条留下的值，写死数字会互相耦合。
+
+第一条用例断言的是**契约**而不是某个具体时刻：推进一个间隔后共享值等于系统时间。原先写的是 `setSystemTime(1_400)` 后断言 `1_400`，那**永远不可能成立** —— `advanceTimersByTimeAsync` 既把 `Date.now()` 推前，又触发定时器，而 `tick()` 写入的是定时器**被调度到的那个时刻**，不是推进的终点；实跑得到的是 `2400`。绑定具体时刻测的是调度器而不是行为，所以改成断言 `=== Date.now()`。
+
+三条用例都包了 `try/finally`：`now` 与 `timer` 是**模块级**的，某条用例在 `stop()` 之前断言失败就会把定时器留给下一条（实跑时第三条因此读到 `0` 而不是 `1`），`finally` 保证失败路径也注销消费者。
 
 - [ ] **Step 2: 跑测试确认它红**
 
