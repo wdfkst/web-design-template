@@ -627,7 +627,7 @@ Expected: FAIL —— `specAttempts` / `assetsDone` / `assetsTotal` 都不在响
 pnpm --filter @vudt/server test
 ```
 
-Expected: PASS，该包由 10 文件 / 111 例变为 **10 文件 / 113 例**。用 `-t 'shows'` 单独跑两条新用例确认它们真的绿，再跑整包确认没有回归。
+Expected: PASS，该包由 10 文件 / 112 例变为 **10 文件 / 114 例**（112 是 Task 3 之后的数，不是基线 111）。用 `-t 'shows'` 单独跑两条新用例确认它们真的绿，再跑整包确认没有回归。
 
 - [ ] **Step 5: 提交**
 
@@ -1248,7 +1248,7 @@ Expected: exit 0。**硬性要求只有一条：每个包的用例数不减、�
 |---|---|---|
 | imagegen | 4 / 29 | 4 / 31（Task 1 加 2 条） |
 | build | 4 / 25 | 4 / 26（Task 2 加 1 条） |
-| server | 10 / 111 | 10 / 113（Task 4 加 2 条；那条扩写的失败用例不算新例） |
+| server | 10 / 112 | 10 / 114（Task 4 加 2 条；那条扩写的失败用例不算新例。112 而非 111：Task 3 已先加了 1 条） |
 | web | 6 / 48 | 6→8 文件、48→75 例（Task 5 的 `taskProgress.test.ts` 24 条 + Task 6 的 `useNow.test.ts` 3 条） |
 
 其余四包（spec 2/13、blocks 6/93、codegen 6/60、providers 3/51）**一个数字都不该动**。web 那 24 条是把 `taskProgress.test.ts` 里每个 `it` 逐个数出来的 —— 若实际输出与它不符，**先查是不是少写了一条**，不要顺手改上表。把实际数字记进 ledger。
