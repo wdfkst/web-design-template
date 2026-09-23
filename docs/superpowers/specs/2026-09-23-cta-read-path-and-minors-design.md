@@ -204,7 +204,7 @@ ProjectSpecInput ──→ deriveSpecInput ──→ assertCtaTargets（保留�
 新闸会拒绝**任何**指向未声明路由的 `to`。已逐一核对过现有夹具里的每一个 `to`：
 
 - `packages/codegen/src/__tests__/fixture.ts`：路由集 `{'/', '/pricing', '/signin'}`；夹具里的 `to` 是 `/pricing`、`/pricing`、`/`（`PricingCard.plans[].cta.to`，嵌套在数组里也会被 `collectTargets` 递归找到）—— 全部已声明。
-- `packages/build/src/__tests__/fixture.ts`：同上。
+- `packages/build/src/__tests__/fixture.ts`：路由集是 `{'/', '/pricing'}` —— **两页，且没有 auth 页**，不是 codegen 那份的复刻；夹具里的 `to` 是 `/pricing`、`/pricing`、`/` —— 全部已声明。
 - `server/src/__tests__/fixture.ts`：路由集 `{'/', '/about', '/pricing'}`；`to` 是 `/pricing` —— 已声明。
 - 全仓没有 JSON 预设 spec；「template preset」这条读路径目前**只存在于注释里**，没有实现。
 
