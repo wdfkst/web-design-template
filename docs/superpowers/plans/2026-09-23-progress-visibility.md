@@ -1293,9 +1293,17 @@ Expected: **必须有差异**。改动之前这条 diff 是空的（原始证据
 
 `server/.env` 已有真 key。**必须从仓库根起服务**（cwd 有五处依赖，起错会静默跌回默认模型 → 中转站 503）；设置文件随之落在 `<根>/.vudt/settings.json`。
 
+**另外，必须先重建前端包**：服务端发的是**构建产物**而不是 dev 源码（`server/src/app.ts:361-391` 发 `webDistDir`，`server/src/config.ts:61` 解析成 `resolve(cwd, 'web/dist')`）。`web/dist` 若早于本分支，浏览器加载的是**旧包**，进度列根本不存在，手验会得到假阴性。
+
 ```bash
 cd /d/zw/vue-ui-design-template
-pnpm --filter @vudt/server dev
+pnpm --filter @vudt/web build
+```
+
+起服务**不要用 `pnpm --filter @vudt/server dev`** —— 本仓库没有任何 dotenv 加载（无依赖、无 import、无 `--env-file`），那条命令下 `process.env.VUDT_SPEC_API_KEY` 是空的，服务在 `server/src/main.ts:75` 直接退出；而且 `--filter` 会把 cwd 切到 `server/`，正好踩上面那个 cwd 坑。README:169 给的是可用的写法，README:177 明确否掉了 `--filter` 那条：
+
+```bash
+./server/node_modules/.bin/tsx --env-file=server/.env server/src/main.ts
 ```
 
 浏览器开 `http://localhost:4300`（4300 上可能还挂着你自己的旧进程，先确认端口是谁的），依次确认：
