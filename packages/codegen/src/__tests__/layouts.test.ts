@@ -31,15 +31,15 @@ describe('pickShell', () => {
     })
   }
 
-  // `form` has always landed on the AppShell — but only by falling through the
-  // `SIDEBAR_PAGE_TYPES.includes()` check. The Record turns that into a written
-  // decision; this pins it so a new page type cannot drift to a shell unnoticed.
-  it('sends a form page to the AppShell', () => {
+  // `form` pages (settings forms, admin forms) belong in the sidebar shell,
+  // consistent with dashboard/settings. This pins the decision so a new page
+  // type cannot drift to a shell unnoticed.
+  it('sends a form page to the SidebarShell', () => {
     const spec = withPages(landingSpec(), [
       page('/', 'Home', 'landing'),
       page('/contact', 'Contact', 'form'),
     ])
-    expect(pickShell(spec)).toBe('AppShell')
+    expect(pickShell(spec)).toBe('SidebarShell')
   })
 })
 

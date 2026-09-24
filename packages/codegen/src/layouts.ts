@@ -30,7 +30,7 @@ export interface LayoutPlan {
 const SHELL_BY_PAGE_TYPE: Record<PageType, ShellName> = {
   landing: 'AppShell',
   auth: 'AppShell',
-  form: 'AppShell',
+  form: 'SidebarShell',
   dashboard: 'SidebarShell',
   settings: 'SidebarShell',
   'list-detail': 'SidebarShell',
