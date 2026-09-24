@@ -597,9 +597,9 @@ interface Item {
 }
 
 const TONE_CLASS: Record<string, string> = {
-  good: 'status-card__tone--good',
-  warn: 'status-card__tone--warn',
-  bad: 'status-card__tone--bad',
+  good: 'status-card__item--good',
+  warn: 'status-card__item--warn',
+  bad: 'status-card__item--bad',
 }
 
 withDefaults(

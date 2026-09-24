@@ -21,7 +21,7 @@ withDefaults(
       <header v-if="heading" class="stats-grid__head">
         <h2 class="stats-grid__title">{{ heading }}</h2>
       </header>
-      <div v-if="stats.length > 0" class="stats-grid__grid">
+      <dl v-if="stats.length > 0" class="stats-grid__grid">
         <div v-for="stat in stats" :key="stat.label" class="stats-grid__cell">
           <dt class="stats-grid__value">
             {{ stat.value }}<span v-if="stat.suffix" class="stats-grid__suffix">{{ stat.suffix }}</span>
@@ -29,7 +29,7 @@ withDefaults(
           <dd class="stats-grid__label">{{ stat.label }}</dd>
           <dd v-if="stat.delta" class="stats-grid__delta">{{ stat.delta }}</dd>
         </div>
-      </div>
+      </dl>
     </div>
   </section>
 </template>
@@ -78,8 +78,8 @@ withDefaults(
 }
 
 .stats-grid__delta {
-  color: var(--color-accent);
-  margin: 0.25rem 0 0;
+  color: var(--color-foreground);
+  margin: calc(var(--space-unit) * 0.25) 0 0;
   font-size: 0.875rem;
   font-weight: 600;
 }

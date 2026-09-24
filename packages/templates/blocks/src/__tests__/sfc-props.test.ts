@@ -40,4 +40,20 @@ describe('sidecar props match the props their components accept', () => {
       expect(definition.props).not.toHaveProperty('assets')
     }
   })
+
+  it('StatusCard tone classes name selectors that exist in its own style block', () => {
+    // A dead class survives every dynamic test — StatusCard once shipped a
+    // TONE_CLASS mapping to `__tone--*` while the CSS targeted `__item--*`,
+    // and 109 green tests did not catch it. Pin every mapped value to a
+    // selector that actually appears in the same file's <style>.
+    const sfc = readSfc('StatusCard')
+    const mapping = /const TONE_CLASS: Record<string, string> = \{([\s\S]*?)\}/.exec(sfc)
+    expect(mapping, 'SFC has a TONE_CLASS mapping').not.toBeNull()
+    const values = mapping![1]!.match(/'([^']+)'/g) ?? []
+    expect(values.length).toBeGreaterThan(0)
+    for (const value of values) {
+      const selector = value.replace(/^'|'$/g, '')
+      expect(sfc).toContain(`.${selector}`)
+    }
+  })
 })

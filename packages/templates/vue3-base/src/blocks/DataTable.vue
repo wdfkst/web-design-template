@@ -31,25 +31,25 @@ withDefaults(
         <table class="table__grid">
           <thead>
             <tr>
-              <th v-for="column in columns" :key="column.key" class="table__th">
+              <th v-for="column in columns" :key="column.key" scope="col" class="table__th">
                 {{ column.label }}
               </th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(row, i) in rows" :key="i" class="table__row">
-              <td v-for="(cell, j) in row.cells" :key="j" class="table__td">
-                <template v-if="columns[j]?.kind === 'badge'">
-                  <span class="table__badge">{{ cell }}</span>
+              <td v-for="(column, j) in columns" :key="j" class="table__td">
+                <template v-if="column.kind === 'badge'">
+                  <span class="table__badge">{{ row.cells[j] ?? '' }}</span>
                 </template>
-                <template v-else-if="columns[j]?.kind === 'status'">
-                  <span class="table__status">{{ cell }}</span>
+                <template v-else-if="column.kind === 'status'">
+                  <span class="table__status">{{ row.cells[j] ?? '' }}</span>
                 </template>
-                <template v-else-if="columns[j]?.kind === 'link'">
-                  <a class="table__link" :href="`#${cell}`">{{ cell }}</a>
+                <template v-else-if="column.kind === 'link'">
+                  <span class="table__link">{{ row.cells[j] ?? '' }}</span>
                 </template>
                 <template v-else>
-                  {{ cell }}
+                  {{ row.cells[j] ?? '' }}
                 </template>
               </td>
             </tr>

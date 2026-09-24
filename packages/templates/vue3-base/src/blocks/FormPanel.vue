@@ -19,11 +19,11 @@ withDefaults(
 <template>
   <section class="section form-panel">
     <div class="container form-panel__inner">
-      <header class="form-panel__head">
+      <header v-if="heading || subheading" class="form-panel__head">
         <h2 v-if="heading" class="form-panel__title">{{ heading }}</h2>
         <p v-if="subheading" class="form-panel__sub">{{ subheading }}</p>
       </header>
-      <form class="form-panel__form" @submit.prevent>
+      <form v-if="fields.length > 0 || submitLabel" class="form-panel__form" @submit.prevent>
         <label v-for="field in fields" :key="field.label" class="form-panel__field">
           <span class="form-panel__label">{{ field.label }}</span>
           <input
