@@ -5,6 +5,7 @@ import { HeroSplit } from './blocks/hero-split.slots.js'
 import { HeroCentered } from './blocks/hero-centered.slots.js'
 import { FeatureTriad } from './blocks/feature-triad.slots.js'
 import { CtaBanner } from './blocks/cta-banner.slots.js'
+import { DataTable } from './blocks/data-table.slots.js'
 import { FooterSimple } from './blocks/footer-simple.slots.js'
 import { EmptyStatePanel } from './blocks/empty-state-panel.slots.js'
 import { FAQAccordion } from './blocks/faq-accordion.slots.js'
@@ -16,15 +17,16 @@ import { TestimonialRow } from './blocks/testimonial-row.slots.js'
 
 const definitions: readonly BlockDefinition[] = [
   AuthPanel,
-  NavBarSimple,
-  HeroSplit,
-  HeroCentered,
-  FeatureTriad,
   CtaBanner,
-  FooterSimple,
+  DataTable,
   EmptyStatePanel,
   FAQAccordion,
+  FeatureTriad,
+  FooterSimple,
+  HeroCentered,
+  HeroSplit,
   LogoStrip,
+  NavBarSimple,
   PricingCard,
   StatsBand,
   StatsGrid,
@@ -54,15 +56,16 @@ export function getSlot(component: string, slotName: string): SlotSpec | undefin
 
 export {
   AuthPanel,
-  NavBarSimple,
-  HeroSplit,
-  HeroCentered,
-  FeatureTriad,
   CtaBanner,
-  FooterSimple,
+  DataTable,
   EmptyStatePanel,
   FAQAccordion,
+  FeatureTriad,
+  FooterSimple,
+  HeroCentered,
+  HeroSplit,
   LogoStrip,
+  NavBarSimple,
   PricingCard,
   StatsBand,
   StatsGrid,

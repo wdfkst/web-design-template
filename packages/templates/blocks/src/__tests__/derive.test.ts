@@ -86,7 +86,7 @@ describe('derivePageAssets', () => {
   // set — same reason the slot error lists the declared slots.
   it('names the available components in the error to help the retry prompt', () => {
     expect(() => derivePageAssets('/', [{ component: 'MadeUpBlock' }])).toThrow(
-      /MadeUpBlock.*available: AuthPanel, CtaBanner, EmptyStatePanel, FAQAccordion, FeatureTriad, FooterSimple, HeroCentered, HeroSplit, LogoStrip, NavBarSimple, PricingCard, StatsBand, StatsGrid, TestimonialRow/,
+      /MadeUpBlock.*available: AuthPanel, CtaBanner, DataTable, EmptyStatePanel, FAQAccordion, FeatureTriad, FooterSimple, HeroCentered, HeroSplit, LogoStrip, NavBarSimple, PricingCard, StatsBand, StatsGrid, TestimonialRow/,
     )
   })
 
@@ -137,6 +137,17 @@ describe('mergeDerivedAssets', () => {
     expect(blocks[0]!.props).toEqual({
       heading: 'By the numbers',
       stats: [{ label: 'Users', value: '12k' }],
+    })
+  })
+
+  it('derives no assets for the slotless DataTable', () => {
+    const { blocks, assets } = derivePageAssets('/', [
+      { component: 'DataTable', props: { columns: [{ key: 'name', label: 'Name' }], rows: [{ cells: ['Acme'] }] } },
+    ])
+    expect(assets).toHaveLength(0)
+    expect(blocks[0]!.props).toEqual({
+      columns: [{ key: 'name', label: 'Name' }],
+      rows: [{ cells: ['Acme'] }],
     })
   })
 

@@ -13,6 +13,7 @@ describe('block registry', () => {
     expect(listBlockComponents()).toEqual([
       'AuthPanel',
       'CtaBanner',
+      'DataTable',
       'EmptyStatePanel',
       'FAQAccordion',
       'FeatureTriad',
