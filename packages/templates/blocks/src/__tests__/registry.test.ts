@@ -26,6 +26,7 @@ describe('block registry', () => {
       'PricingCard',
       'StatsBand',
       'StatsGrid',
+      'StatusCard',
       'TestimonialRow',
     ])
   })
