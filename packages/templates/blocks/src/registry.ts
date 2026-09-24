@@ -7,6 +7,7 @@ import { FeatureTriad } from './blocks/feature-triad.slots.js'
 import { CtaBanner } from './blocks/cta-banner.slots.js'
 import { DataTable } from './blocks/data-table.slots.js'
 import { FooterSimple } from './blocks/footer-simple.slots.js'
+import { FormPanel } from './blocks/form-panel.slots.js'
 import { EmptyStatePanel } from './blocks/empty-state-panel.slots.js'
 import { FAQAccordion } from './blocks/faq-accordion.slots.js'
 import { StatsBand } from './blocks/stats-band.slots.js'
@@ -23,6 +24,7 @@ const definitions: readonly BlockDefinition[] = [
   FAQAccordion,
   FeatureTriad,
   FooterSimple,
+  FormPanel,
   HeroCentered,
   HeroSplit,
   LogoStrip,
@@ -62,6 +64,7 @@ export {
   FAQAccordion,
   FeatureTriad,
   FooterSimple,
+  FormPanel,
   HeroCentered,
   HeroSplit,
   LogoStrip,

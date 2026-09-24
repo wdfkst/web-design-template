@@ -18,6 +18,7 @@ describe('block registry', () => {
       'FAQAccordion',
       'FeatureTriad',
       'FooterSimple',
+      'FormPanel',
       'HeroCentered',
       'HeroSplit',
       'LogoStrip',
