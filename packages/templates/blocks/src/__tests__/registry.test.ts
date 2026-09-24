@@ -23,6 +23,7 @@ describe('block registry', () => {
       'NavBarSimple',
       'PricingCard',
       'StatsBand',
+      'StatsGrid',
       'TestimonialRow',
     ])
   })

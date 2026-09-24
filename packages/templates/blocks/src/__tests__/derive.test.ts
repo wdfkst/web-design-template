@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ProjectSpecInputSchema } from '@vudt/spec'
 import { BlockDerivationError, assertCtaTargets, derivePageAssets, mergeDerivedAssets } from '../derive.js'
 import { deriveSpecInput } from '../draft.js'
-import { AuthPanel, HeroSplit, StatsBand, LogoStrip, PricingCard, TestimonialRow, FAQAccordion } from '../registry.js'
+import { AuthPanel, HeroSplit, StatsBand, StatsGrid, LogoStrip, PricingCard, TestimonialRow, FAQAccordion } from '../registry.js'
 
 const landing = [
   { component: 'LogoStrip' },
@@ -86,7 +86,7 @@ describe('derivePageAssets', () => {
   // set — same reason the slot error lists the declared slots.
   it('names the available components in the error to help the retry prompt', () => {
     expect(() => derivePageAssets('/', [{ component: 'MadeUpBlock' }])).toThrow(
-      /MadeUpBlock.*available: AuthPanel, CtaBanner, EmptyStatePanel, FAQAccordion, FeatureTriad, FooterSimple, HeroCentered, HeroSplit, LogoStrip, NavBarSimple, PricingCard, StatsBand, TestimonialRow/,
+      /MadeUpBlock.*available: AuthPanel, CtaBanner, EmptyStatePanel, FAQAccordion, FeatureTriad, FooterSimple, HeroCentered, HeroSplit, LogoStrip, NavBarSimple, PricingCard, StatsBand, StatsGrid, TestimonialRow/,
     )
   })
 
@@ -137,6 +137,17 @@ describe('mergeDerivedAssets', () => {
     expect(blocks[0]!.props).toEqual({
       heading: 'By the numbers',
       stats: [{ label: 'Users', value: '12k' }],
+    })
+  })
+
+  it('derives no assets for the slotless StatsGrid', () => {
+    const { blocks, assets } = derivePageAssets('/', [
+      { component: 'StatsGrid', props: { heading: 'Overview', stats: [{ label: 'Users', value: '12k', delta: '+8%' }] } },
+    ])
+    expect(assets).toHaveLength(0)
+    expect(blocks[0]!.props).toEqual({
+      heading: 'Overview',
+      stats: [{ label: 'Users', value: '12k', delta: '+8%' }],
     })
   })
 

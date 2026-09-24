@@ -9,6 +9,7 @@ import { FooterSimple } from './blocks/footer-simple.slots.js'
 import { EmptyStatePanel } from './blocks/empty-state-panel.slots.js'
 import { FAQAccordion } from './blocks/faq-accordion.slots.js'
 import { StatsBand } from './blocks/stats-band.slots.js'
+import { StatsGrid } from './blocks/stats-grid.slots.js'
 import { LogoStrip } from './blocks/logo-strip.slots.js'
 import { PricingCard } from './blocks/pricing-card.slots.js'
 import { TestimonialRow } from './blocks/testimonial-row.slots.js'
@@ -26,6 +27,7 @@ const definitions: readonly BlockDefinition[] = [
   LogoStrip,
   PricingCard,
   StatsBand,
+  StatsGrid,
   TestimonialRow,
 ]
 
@@ -63,5 +65,6 @@ export {
   LogoStrip,
   PricingCard,
   StatsBand,
+  StatsGrid,
   TestimonialRow,
 }
