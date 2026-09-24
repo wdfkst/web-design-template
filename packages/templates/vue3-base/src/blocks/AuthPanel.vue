@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { SlotAssets } from '../asset'
+
 interface Field {
   label: string
   type: string
@@ -18,6 +20,7 @@ withDefaults(
     submitLabel?: string
     altActionLabel?: string
     note?: string
+    assets?: SlotAssets
   }>(),
   {
     mode: 'sign-in',
@@ -27,6 +30,7 @@ withDefaults(
     submitLabel: '',
     altActionLabel: '',
     note: '',
+    assets: () => ({}),
   },
 )
 </script>
@@ -35,6 +39,29 @@ withDefaults(
   <section class="section auth">
     <div class="container auth__inner">
       <div class="auth__panel">
+        <div class="auth__figures">
+          <div class="auth__figure">
+            <img
+              v-if="assets.illustration"
+              data-asset-slot="illustration"
+              :src="assets.illustration.src"
+              :alt="assets.illustration.alt"
+              width="512"
+              height="512"
+              loading="lazy"
+            />
+          </div>
+          <img
+            v-if="assets.icon"
+            data-asset-slot="icon"
+            :src="assets.icon.src"
+            :alt="assets.icon.alt"
+            width="128"
+            height="128"
+            loading="lazy"
+            class="auth__icon"
+          />
+        </div>
         <header class="auth__head">
           <h2 class="auth__title">{{ heading }}</h2>
           <p v-if="subheading" class="auth__sub">{{ subheading }}</p>
@@ -70,6 +97,25 @@ withDefaults(
   border: 1px solid color-mix(in srgb, var(--color-muted) 25%, transparent);
   border-radius: var(--radius);
   background: var(--color-surface);
+}
+
+.auth__figures {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  margin-bottom: calc(var(--space-unit) * 1.5);
+}
+
+.auth__figure img {
+  width: 100%;
+  max-width: 180px;
+  height: auto;
+  object-fit: contain;
+}
+
+.auth__icon {
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--color-muted) 25%, transparent);
 }
 
 .auth__head {

@@ -229,11 +229,12 @@ describe('mergeDerivedAssets', () => {
     })
   })
 
-  it('derives no assets for the slotless AuthPanel, and mode/fields pass through', () => {
+  it('derives illustration and icon assets for AuthPanel, geometry from the sidecar', () => {
     const { blocks, assets } = derivePageAssets('/', [
       { component: 'AuthPanel', props: { mode: 'sign-up', heading: 'Create Account', fields: [{ label: 'Email', type: 'email' }] } },
     ])
-    expect(assets).toHaveLength(0)
+    expect(assets).toHaveLength(2)
+    expect(assets.map((a) => a.purpose).sort()).toEqual(['hero-illustration', 'logo-mark'])
     expect(blocks[0]!.props).toEqual({
       mode: 'sign-up',
       heading: 'Create Account',
