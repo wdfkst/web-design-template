@@ -323,6 +323,17 @@ describe('createOpenAISpecDrafter', () => {
     expect(system).toMatch(/brand-flavoured/i)
   })
 
+  test('guides the theme by site kind in the system prompt', async () => {
+    const { calls, drafter } = drafterWith(chatReply('{}'))
+
+    await drafter.draft({ description: 'a management system', attempt: 1 })
+
+    const system = systemOf(calls[0]!)
+    expect(system).toMatch(/back-office or management system/i)
+    expect(system).toMatch(/DataTable/)
+    expect(system).toMatch(/restrained/)
+  })
+
   test('asks for a small site rather than a single page', async () => {
     const { calls, drafter } = drafterWith(chatReply('{}'))
 
