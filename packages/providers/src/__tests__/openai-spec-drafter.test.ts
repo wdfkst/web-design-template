@@ -332,6 +332,10 @@ describe('createOpenAISpecDrafter', () => {
     expect(system).toMatch(/back-office or management system/i)
     expect(system).toMatch(/DataTable/)
     expect(system).toMatch(/restrained/)
+    // The shell is chosen by pageType, not by block — leaving pageType to
+    // inference would let the model build app pages in the marketing shell.
+    expect(system).toMatch(/dashboard.*settings.*list-detail.*form/)
+    expect(system).toMatch(/never\s+["']?landing|not\s+["']?landing/i)
   })
 
   test('asks for a small site rather than a single page', async () => {
