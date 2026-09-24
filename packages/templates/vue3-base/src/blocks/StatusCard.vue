@@ -6,9 +6,9 @@ interface Item {
 }
 
 const TONE_CLASS: Record<string, string> = {
-  good: 'status-card__tone--good',
-  warn: 'status-card__tone--warn',
-  bad: 'status-card__tone--bad',
+  good: 'status-card__item--good',
+  warn: 'status-card__item--warn',
+  bad: 'status-card__item--bad',
 }
 
 withDefaults(
@@ -24,8 +24,8 @@ withDefaults(
 <template>
   <section class="section status-card">
     <div class="container status-card__inner">
-      <header class="status-card__head">
-        <h2 v-if="heading" class="status-card__title">
+      <header v-if="heading || icon" class="status-card__head">
+        <h2 class="status-card__title">
           {{ heading }}
           <span v-if="icon" class="status-card__icon">{{ icon }}</span>
         </h2>

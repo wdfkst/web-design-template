@@ -11,8 +11,8 @@ import { FormPanel } from './blocks/form-panel.slots.js'
 import { EmptyStatePanel } from './blocks/empty-state-panel.slots.js'
 import { FAQAccordion } from './blocks/faq-accordion.slots.js'
 import { StatsBand } from './blocks/stats-band.slots.js'
-import { StatusCard } from './blocks/status-card.slots.js'
 import { StatsGrid } from './blocks/stats-grid.slots.js'
+import { StatusCard } from './blocks/status-card.slots.js'
 import { LogoStrip } from './blocks/logo-strip.slots.js'
 import { PricingCard } from './blocks/pricing-card.slots.js'
 import { TestimonialRow } from './blocks/testimonial-row.slots.js'
@@ -32,8 +32,8 @@ const definitions: readonly BlockDefinition[] = [
   NavBarSimple,
   PricingCard,
   StatsBand,
-  StatusCard,
   StatsGrid,
+  StatusCard,
   TestimonialRow,
 ]
 
@@ -73,7 +73,7 @@ export {
   NavBarSimple,
   PricingCard,
   StatsBand,
-  StatusCard,
   StatsGrid,
+  StatusCard,
   TestimonialRow,
 }
