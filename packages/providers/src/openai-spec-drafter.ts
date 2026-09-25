@@ -32,21 +32,40 @@ export interface OpenAISpecDrafterOptions {
 const DEFAULT_BASE_URL = 'https://api.openai.com/v1'
 
 /**
- * The block catalogue, rendered for the prompt. Only the fields the model is
- * allowed to influence are described as choices — the block's props and the
- * per-slot subject text; geometry is stated as off-limits, because it comes from
- * the sidecar and the code generator and the image generator both read it from
- * there.
+ * Blocks whose home is an app / back-office page. A management-system draft
+ * picks from this group only, which is why the catalogue separates them from
+ * the marketing blocks — the model should not have to scan marketing lines to
+ * find what a back-office site uses.
+ */
+const APP_BLOCKS = new Set(['DataTable', 'EmptyStatePanel', 'FormPanel', 'StatsGrid', 'StatusCard', 'AuthPanel'])
+
+/**
+ * The block catalogue, rendered for the prompt in two groups — app blocks
+ * (back-office / management systems) and marketing blocks. Only the fields the
+ * model is allowed to influence are described as choices — the block's props
+ * and the per-slot subject text; geometry is stated as off-limits, because it
+ * comes from the sidecar and the code generator and the image generator both
+ * read it from there.
  * Layout components are left out on purpose — see the loop below.
  */
 function renderBlockCatalogue(): string {
   const lines: string[] = []
+  let group: 'APP' | 'marketing' | null = null
   for (const component of [...BLOCK_REGISTRY.keys()].sort()) {
     const definition = BLOCK_REGISTRY.get(component)!
     // Nav and footer are project-level layout: the app shell renders them once
     // from the spec's own page list. Listing them would offer the model a block
     // that gate 1 rejects, burning a whole retry on a guaranteed failure.
     if (definition.layoutOnly === true) continue
+    const nextGroup = APP_BLOCKS.has(component) ? 'APP' : 'marketing'
+    if (nextGroup !== group) {
+      lines.push(
+        nextGroup === 'APP'
+          ? 'APP blocks (back-office / management systems only):'
+          : 'Marketing blocks (marketing sites only):',
+      )
+      group = nextGroup
+    }
     const pageTypes = definition.pageTypes.join(', ')
     const props = Object.entries(definition.props)
       .map(([name, shape]) => `${name} (${shape})`)
@@ -64,26 +83,51 @@ function renderBlockCatalogue(): string {
 
 function systemPrompt(): string {
   return [
-    'You design Vue 3 marketing and app pages as a single JSON "draft" object.',
-    'Reply with one JSON object only, no prose and no code fences.',
+    'You are a front-end design agent. You design complete Vue 3 websites and web apps —',
+    'marketing sites, back-office / management systems, dashboards, SaaS tools, portals —',
+    'whatever the project description calls for — and output the whole site as a single',
+    'JSON "draft" object. Reply with one JSON object only, no prose and no code fences.',
     '',
     'Design process (never output this — think it in your head before writing the JSON):',
-    '- First plan the site: list the pages a visitor needs, in the order the nav bar should show',
-    '  them. Then, for each page, outline in 2-3 lines what it must communicate and who it is for,',
-    '  and choose block components that actually serve that outline.',
+    '- Step 1 — read the project description and decide what kind of site it is: a public',
+    '  marketing site, an internal back-office / management system, or something else (a',
+    '  tool, a portal, a showcase). The description decides the form; you do not. Read the',
+    '  keywords (admin, dashboard, console, CRM, operations, "后台", "管理系统") and judge',
+    '  from the whole description, not from one word.',
+    '- Step 2 — plan the pages: list the pages a visitor needs, in the order the nav bar should',
+    '  show them. Then, for each page, outline in 2-3 lines what it must communicate and who',
+    '  it is for, and choose block components that actually serve that outline — the app',
+    '  blocks for a management system, the marketing blocks for a marketing site.',
     '- Then fill copy that is concrete and brand-flavoured, not placeholder text.',
-    '- Pick a theme with a distinctive palette (do not default to a generic blue-grey), a',
-    '  font pair with character, and radius/spacing/mode that match the page mood.',
+    '- Finally pick a theme that matches the site form you decided in step 1 (a back-office',
+    '  system is not a marketing brochure — the rules below say what each form looks like).',
     '',
-    'Site kind (read the project description first):',
-    '- If it describes a back-office or management system (admin, dashboard, console, CRM,',
-    '  operations, "后台", "管理系统"), plan app pages and pick app blocks: DataTable,',
+    'Site kind (decide from the project description first, then follow the matching section):',
+    '',
+    '1. Back-office / management system (admin, dashboard, console, CRM, operations,',
+    '   "后台", "管理系统"):',
+    '- Plan app pages and pick blocks from the "APP blocks" section only: DataTable,',
     '  FormPanel, StatsGrid, StatusCard, EmptyStatePanel, AuthPanel. Mark those pages',
     '  "dashboard", "settings", "list-detail" or "form" (auth pages "auth") — never',
-    '  "landing", which switches the whole site to the marketing shell. Keep the theme',
-    '  restrained — a neutral palette, compact spacing, small radius, no marketing extras.',
-    '- Otherwise plan a marketing site and pick marketing blocks, with a distinctive palette',
-    '  and a radius/spacing that match the page mood.',
+    '  "landing", which switches the whole site to the marketing shell.',
+    '- Theme is a management console, not a brochure: mode "light"; background a near-white',
+    '  grey (#f5f6f8 or similar), surface pure white, foreground a dark slate; primary a',
+    '  restrained hue — a desaturated blue, slate blue, or one brand colour — never a bright',
+    '  saturated blue; radius "none" or "sm"; spacing "compact"; body font a clean sans',
+    '  (Inter, system-ui). Density first: compact line height, small labels, hairline',
+    '  dividers instead of big card shadows.',
+    '- Do not: large rounded cards, drop shadows, gradient buttons, big marketing',
+    '  illustrations, hype copy, decorative photography.',
+    '',
+    '2. Public marketing site:',
+    '- Plan marketing pages and pick blocks from the "Marketing blocks" section; pick a',
+    '  distinctive palette (do not default to a generic blue-grey), a font pair with',
+    '  character, and a radius/spacing that match the page mood.',
+    '',
+    '3. Anything else (a tool, a portal, a showcase, an e-commerce catalogue):',
+    '- Plan the pages that serve the product, pick the closest blocks, and match the theme',
+    '  to the audience — a data tool reads like a console, a showcase reads like a marketing',
+    '  site.',
     '',
     'Draft shape (send every key; only "props" and "content" may be omitted):',
     '{',
@@ -120,11 +164,15 @@ function systemPrompt(): string {
     '  ]',
     '}',
     '',
-    'Available block components, with the props and the only legal slot names for each:',
+    'Available block components (grouped by use; NavBarSimple and FooterSimple are shell-level',
+    'layout — see the rules), with the props and the only legal slot names for each:',
     renderBlockCatalogue(),
     '',
     'Rules:',
     '- Use only the components listed above, and only the props and slot names listed for that one.',
+    '- Use the group that matches the site kind you decided in step 1: a management system uses',
+    '  the "APP blocks" group, a marketing site uses the "Marketing blocks" group. Mixing a',
+    '  marketing block into a back-office site (or an app block into a marketing site) reads wrong.',
     '- A prop\'s parenthesised shape is its exact key set: write "features": [{ "title": ...,',
     '  "body": ... }], never renamed fields.',
     '- You do not write asset ids, sizes or bindings. Every slot listed above is filled with an image',

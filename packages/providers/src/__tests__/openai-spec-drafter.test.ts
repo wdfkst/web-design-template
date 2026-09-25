@@ -329,13 +329,67 @@ describe('createOpenAISpecDrafter', () => {
     await drafter.draft({ description: 'a management system', attempt: 1 })
 
     const system = systemOf(calls[0]!)
-    expect(system).toMatch(/back-office or management system/i)
+    expect(system).toMatch(/back-office \/ management system|management system \(admin/i)
     expect(system).toMatch(/DataTable/)
     expect(system).toMatch(/restrained/)
     // The shell is chosen by pageType, not by block — leaving pageType to
     // inference would let the model build app pages in the marketing shell.
     expect(system).toMatch(/dashboard.*settings.*list-detail.*form/)
     expect(system).toMatch(/never\s+["']?landing|not\s+["']?landing/i)
+  })
+
+  test('makes the site form a judgement from the description, not a fixed genre', async () => {
+    const { calls, drafter } = drafterWith(chatReply('{}'))
+
+    await drafter.draft({ description: 'a management system', attempt: 1 })
+
+    const system = systemOf(calls[0]!)
+    expect(system).toMatch(/front-end design agent/i)
+    expect(system).toMatch(/whatever the project description calls for/i)
+    // The description decides the form; the agent does not pick a genre first.
+    expect(system).toMatch(/description decides the form/i)
+    expect(system).toMatch(/judge\s+from the whole description/i)
+  })
+
+  test('gives the back-office theme executable rules instead of adjectives only', async () => {
+    const { calls, drafter } = drafterWith(chatReply('{}'))
+
+    await drafter.draft({ description: 'a management system', attempt: 1 })
+
+    const system = systemOf(calls[0]!)
+    // Concrete colour/radius/spacing rules, not just "restrained".
+    expect(system).toMatch(/near-white|#f5f6f8/i)
+    expect(system).toMatch(/never a bright\s+saturated blue/i)
+    expect(system).toMatch(/radius "none" or "sm"|radius "none" \| "sm"/i)
+    expect(system).toMatch(/hairline\s+dividers/i)
+    // Negative examples — what a console is not.
+    expect(system).toMatch(/do not[^.]*(large rounded cards|drop shadows|gradient buttons)/i)
+  })
+
+  test('groups the catalogue by site kind so app blocks are not buried in marketing lines', async () => {
+    const { calls, drafter } = drafterWith(chatReply('{}'))
+
+    await drafter.draft({ description: 'a management system', attempt: 1 })
+
+    const system = systemOf(calls[0]!)
+    expect(system).toMatch(/APP blocks \(back-office \/ management systems only\)/i)
+    expect(system).toMatch(/Marketing blocks \(marketing sites only\)/i)
+    // The app block group comes first, before the marketing group.
+    expect(
+      system.indexOf('APP blocks (back-office / management systems only)') <
+        system.indexOf('Marketing blocks (marketing sites only)'),
+    ).toBe(true)
+  })
+
+  test('keeps marketing blocks available to marketing sites', async () => {
+    const { calls, drafter } = drafterWith(chatReply('{}'))
+
+    await drafter.draft({ description: 'a coffee roaster landing page', attempt: 1 })
+
+    const system = systemOf(calls[0]!)
+    expect(system).toMatch(/Marketing blocks \(marketing sites only\)/i)
+    expect(system).toMatch(/CtaBanner/)
+    expect(system).toMatch(/PricingCard/)
   })
 
   test('asks for a small site rather than a single page', async () => {
