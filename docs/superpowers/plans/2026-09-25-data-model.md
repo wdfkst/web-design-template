@@ -767,7 +767,8 @@ function mockValue(type: string, rowIndex: number, options?: readonly string[]):
     default:
       return ''
   }
-}```
+}
+```
 
 - [ ] **Step 5: 实现 `renderStore`**
 
