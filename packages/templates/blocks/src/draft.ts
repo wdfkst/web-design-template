@@ -102,11 +102,16 @@ export function deriveSpecInput(draft: unknown): DeriveSpecResult {
         meta,
         theme,
         styleBible,
+        // A draft declares no data model yet; both default to empty in the spec.
+        collections: [],
+        forms: [],
         pages: derivations.map(({ page, derived }) => ({
           route: page.route,
           title: page.title,
           pageType: page.pageType,
           blocks: derived.blocks,
+          // A draft declares no operations yet; the spec defaults them to empty.
+          operations: [],
         })),
         assets,
       },

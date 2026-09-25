@@ -1,5 +1,7 @@
 import { z } from 'zod'
 import { AssetInputSchema, AssetSchema, renderSizeMatchesRatio } from './asset.js'
+import { CollectionSchema } from './collection.js'
+import { FormSchema } from './form.js'
 import { PageSchema } from './page.js'
 import { StyleBibleSchema } from './style-bible.js'
 import { ThemeSchema } from './theme.js'
@@ -14,10 +16,14 @@ const baseShape = {
   meta: MetaSchema,
   theme: ThemeSchema,
   styleBible: StyleBibleSchema,
+  collections: z.array(CollectionSchema).default([]),
+  forms: z.array(FormSchema).default([]),
   pages: z.array(PageSchema).min(1),
 }
 
 type Checked = {
+  collections: z.infer<typeof CollectionSchema>[]
+  forms: z.infer<typeof FormSchema>[]
   pages: z.infer<typeof PageSchema>[]
   assets: { id: string; aspectRatio: string; renderSize: { w: number; h: number } }[]
 }
@@ -50,6 +56,49 @@ function checkReferentialIntegrity(spec: Checked, ctx: z.RefinementCtx): void {
     }
   }
 
+  const seenCollectionIds = new Set<string>()
+  for (const [index, collection] of spec.collections.entries()) {
+    if (seenCollectionIds.has(collection.id)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['collections', index, 'id'],
+        message: `duplicate collection id "${collection.id}"`,
+      })
+    }
+    seenCollectionIds.add(collection.id)
+
+    for (const [fieldIndex, field] of collection.fields.entries()) {
+      if (!(field in collection.model)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['collections', index, 'fields', fieldIndex],
+          message: `collection "${collection.id}" field "${field}" is not a model key`,
+        })
+      }
+    }
+
+    if (
+      (collection.actions.includes('edit') || collection.actions.includes('delete')) &&
+      !('id' in collection.model)
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['collections', index, 'actions'],
+        message: `collection "${collection.id}" actions include edit/delete but its model has no "id" key`,
+      })
+    }
+  }
+
+  for (const [index, form] of spec.forms.entries()) {
+    if (form.collection !== undefined && !seenCollectionIds.has(form.collection)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['forms', index, 'collection'],
+        message: `form "${form.id}" references unknown collection "${form.collection}"`,
+      })
+    }
+  }
+
   const seenRoutes = new Set<string>()
   for (const [pageIndex, page] of spec.pages.entries()) {
     if (seenRoutes.has(page.route)) {
@@ -70,6 +119,37 @@ function checkReferentialIntegrity(spec: Checked, ctx: z.RefinementCtx): void {
             message: `slot "${slot}" binds unknown asset id "${assetId}"`,
           })
         }
+      }
+    }
+  }
+
+  const declaredRoutes = new Set(spec.pages.map((page) => page.route))
+  for (const [pageIndex, page] of spec.pages.entries()) {
+    const seenOpIds = new Set<string>()
+    for (const [opIndex, operation] of page.operations.entries()) {
+      if (seenOpIds.has(operation.id)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['pages', pageIndex, 'operations', opIndex, 'id'],
+          message: `duplicate operation id "${operation.id}" on route "${page.route}"`,
+        })
+      }
+      seenOpIds.add(operation.id)
+
+      if (operation.target.startsWith('/')) {
+        if (!declaredRoutes.has(operation.target)) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['pages', pageIndex, 'operations', opIndex, 'target'],
+            message: `operation target "${operation.target}" is not a declared route`,
+          })
+        }
+      } else if (!seenCollectionIds.has(operation.target)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['pages', pageIndex, 'operations', opIndex, 'target'],
+          message: `operation target "${operation.target}" is not a declared collection id`,
+        })
       }
     }
   }

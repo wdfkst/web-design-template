@@ -84,6 +84,7 @@ describe('renderPage', () => {
           title: 'Bare',
           pageType: 'landing',
           blocks: [{ component: 'NavBarSimple', props: {}, assetBindings: {} }],
+          operations: [],
         },
       ],
     }
@@ -151,6 +152,7 @@ describe('renderPage contract violations', () => {
           title: 'X',
           pageType: 'landing',
           blocks: [{ component: 'NotARealBlock', props: {}, assetBindings: {} }],
+          operations: [],
         },
       ],
     }

@@ -33,11 +33,14 @@ export function validSpecInput(): ProjectSpecInput {
       negativePrompt: 'no text, no watermark',
       seed: 1234,
     },
+    collections: [],
+    forms: [],
     pages: [
       {
         route: '/',
         title: 'Home',
         pageType: 'landing',
+        operations: [],
         blocks: [
           {
             component: 'HeroSplit',

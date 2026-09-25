@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { OperationSchema } from './operation.js'
 
 export const PageTypeSchema = z.enum([
   'landing',
@@ -24,6 +25,7 @@ export const PageSchema = z.object({
   title: z.string().min(1).max(120),
   pageType: PageTypeSchema,
   blocks: z.array(BlockSchema).min(1),
+  operations: z.array(OperationSchema).default([]),
 })
 
 export type PageType = z.infer<typeof PageTypeSchema>

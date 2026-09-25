@@ -13,7 +13,7 @@ function page(
   title: string,
   pageType: ProjectSpec['pages'][number]['pageType'],
 ): ProjectSpec['pages'][number] {
-  return { route, title, pageType, blocks: [] }
+  return { route, title, pageType, blocks: [], operations: [] }
 }
 
 describe('pickShell', () => {
