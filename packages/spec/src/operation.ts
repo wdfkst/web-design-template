@@ -2,8 +2,9 @@ import { z } from 'zod'
 
 /**
  * A page-level action the generated app wires to a button. `target` is either a
- * collection id or a declared route; which one is expected follows from `kind`
- * and is checked in checkReferentialIntegrity.
+ * collection id or a declared route, verified by shape only (a leading `/` means
+ * a route) in checkReferentialIntegrity; the pairing of `kind` to `target` shape
+ * is the code generator's call.
  */
 export const OperationSchema = z.object({
   id: z.string().regex(/^[a-z][a-z0-9-]*$/),

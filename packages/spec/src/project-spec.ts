@@ -68,7 +68,7 @@ function checkReferentialIntegrity(spec: Checked, ctx: z.RefinementCtx): void {
     seenCollectionIds.add(collection.id)
 
     for (const [fieldIndex, field] of collection.fields.entries()) {
-      if (!(field in collection.model)) {
+      if (!Object.hasOwn(collection.model, field)) {
         ctx.addIssue({
           code: 'custom',
           path: ['collections', index, 'fields', fieldIndex],
@@ -79,7 +79,7 @@ function checkReferentialIntegrity(spec: Checked, ctx: z.RefinementCtx): void {
 
     if (
       (collection.actions.includes('edit') || collection.actions.includes('delete')) &&
-      !('id' in collection.model)
+      !Object.hasOwn(collection.model, 'id')
     ) {
       ctx.addIssue({
         code: 'custom',

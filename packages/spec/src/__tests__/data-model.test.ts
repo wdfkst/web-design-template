@@ -177,4 +177,36 @@ describe('data model schemas', () => {
     input.pages![0]!.operations![0]!.target = '/orders/new'
     expect(parseProjectSpecInput(input).ok).toBe(true)
   })
+
+  // `model` is a z.record, so its parsed value inherits Object.prototype: an `in`
+  // check would let "toString" and friends pass as declared field keys.
+  it('rejects an inherited prototype key in fields', () => {
+    for (const key of ['toString', 'constructor', 'hasOwnProperty']) {
+      const input = dataModelSpecInput()
+      input.collections![0]!.fields = ['customer', key]
+      const result = parseProjectSpecInput(input)
+      expect(result.ok).toBe(false)
+      if (result.ok) continue
+      expect(result.feedback).toContain('collections[0].fields[1]')
+      expect(result.feedback).toContain('not a model key')
+    }
+  })
+
+  it('rejects duplicate collection ids', () => {
+    const input = dataModelSpecInput()
+    input.collections!.push({ ...input.collections![0]! })
+    const result = parseProjectSpecInput(input)
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.feedback).toContain('duplicate collection id "orders"')
+  })
+
+  it('accepts a form that declares no collection (toast-only submit)', () => {
+    const input = dataModelSpecInput()
+    delete input.forms![0]!.collection
+    const result = parseProjectSpecInput(input)
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.value.forms[0]!.collection).toBeUndefined()
+  })
 })
