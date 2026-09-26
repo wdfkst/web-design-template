@@ -16,7 +16,7 @@ function sparkPoints(series?: number[]): string {
   const span = max === 0 ? 1 : max
   return series
     .map((value, index) => {
-      const x = (index / (series.length - 1)) * 100
+      const x = (index / Math.max(1, series.length - 1)) * 100
       const y = 30 - (value / span) * 26 - 2
       return `${x.toFixed(1)},${y.toFixed(1)}`
     })
