@@ -4,7 +4,7 @@ import { generateProject } from '../project.js'
 import { renderRouter } from '../router.js'
 import { renderTokensCss } from '../tokens.js'
 import { renderIndexHtml } from '../index-html.js'
-import { landingSpec } from './fixture.js'
+import { dataModelSpec, landingSpec } from './fixture.js'
 
 describe('generateProject', () => {
   it('emits one page file per spec page plus router and tokens', () => {
@@ -32,6 +32,16 @@ describe('generateProject', () => {
 
   it('is deterministic: same spec in, byte-identical files out', () => {
     expect(generateProject(landingSpec())).toEqual(generateProject(landingSpec()))
+  })
+
+  it('emits data files only when the spec declares collections (zero-break)', () => {
+    const withData = generateProject(dataModelSpec())
+    expect(Object.keys(withData.files)).toContain('src/data/mock.ts')
+    expect(Object.keys(withData.files)).toContain('src/data/store.ts')
+
+    const withoutData = generateProject(landingSpec())
+    expect(Object.keys(withoutData.files)).not.toContain('src/data/mock.ts')
+    expect(Object.keys(withoutData.files)).not.toContain('src/data/store.ts')
   })
 })
 

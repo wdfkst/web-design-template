@@ -1,8 +1,10 @@
 import type { ProjectSpec } from '@vudt/spec'
 import { renderApp } from './app.js'
+import { renderCollections } from './data.js'
 import { assetFilePath, pageComponentName } from './naming.js'
 import { renderPage } from './page.js'
 import { renderRouter } from './router.js'
+import { renderStore } from './store.js'
 import { renderTokensCss } from './tokens.js'
 
 /** One image the generator expects the image side to produce. */
@@ -41,6 +43,11 @@ export function generateProject(spec: ProjectSpec): GeneratedProject {
   files['src/App.vue'] = renderApp(spec)
   files['src/router.ts'] = renderRouter(spec)
   files['src/styles/tokens.css'] = renderTokensCss(spec)
+
+  if (spec.collections.length > 0) {
+    files['src/data/mock.ts'] = renderCollections(spec)
+    files['src/data/store.ts'] = renderStore(spec)
+  }
 
   const expectedAssets = spec.assets.map((asset) => ({
     assetId: asset.id,

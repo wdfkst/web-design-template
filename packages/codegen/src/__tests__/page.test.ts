@@ -3,7 +3,7 @@ import { getSlot } from '@vudt/blocks'
 import type { ProjectSpec } from '@vudt/spec'
 import { CodegenError } from '../errors.js'
 import { renderPage } from '../page.js'
-import { landingSpec } from './fixture.js'
+import { dataModelSpec, landingSpec } from './fixture.js'
 
 function homePage(spec: ProjectSpec) {
   return spec.pages.find((page) => page.route === '/')!
@@ -188,5 +188,92 @@ describe('renderPage contract violations', () => {
     expect(() => renderPage(broken, homePage(broken))).toThrow(CodegenError)
     expect(() => renderPage(broken, homePage(broken))).toThrow(/not a declared route/)
     expect(() => renderPage(broken, homePage(broken))).toThrow(/"\/nope"/)
+  })
+})
+
+describe('renderPage data-model bindings', () => {
+  const spec = dataModelSpec()
+  const orders = spec.pages.find((page) => page.route === '/orders')!
+  const form = spec.pages.find((page) => page.route === '/orders/new')!
+
+  it('binds a DataTable to its collection: store const, data ref, columns const', () => {
+    const sfc = renderPage(spec, orders)
+    expect(sfc).toContain(`const storeOrders = useCollectionRows('orders')`)
+    expect(sfc).toContain(`const dataOrders = ref(storeOrders.rows)`)
+    // renderColumns 返回单层 JSON 文本（`[{"key":...}]`），断言只包一层 stringify
+    expect(sfc).toContain(`const columnsOrders = ${JSON.stringify([
+      { key: 'id', label: 'ID' },
+      { key: 'customer', label: '客户' },
+      { key: 'amount', label: '金额' },
+      { key: 'status', label: '状态' },
+      { key: 'created', label: '创建日期' },
+      { key: 'active', label: '启用' },
+    ])}`)
+    expect(sfc).toContain(`:data="dataOrders"`)
+    expect(sfc).toContain(`:columns="columnsOrders"`)
+  })
+
+  it('maps collection actions onto table capabilities and row actions', () => {
+    const sfc = renderPage(spec, orders)
+    expect(sfc).toContain(`:searchable="true"`)
+    expect(sfc).toContain(`:sortable="true"`)
+    expect(sfc).toContain(`:pageable="true"`)
+    expect(sfc).toContain(`:page-size="8"`)
+    expect(sfc).toContain(`:row-actions="'edit,delete'"`)
+  })
+
+  it('strips the collection selector from the model props const', () => {
+    const sfc = renderPage(spec, orders)
+    expect(sfc).not.toContain('collection:')
+    expect(sfc).toContain('"heading": "订单列表"')
+  })
+
+  it('binds row ops to page handlers that re-snapshot the table', () => {
+    const sfc = renderPage(spec, orders)
+    expect(sfc).toContain('@save="saveOrders"')
+    expect(sfc).toContain('@delete="deleteOrders"')
+    expect(sfc).toContain('const saveOrders = (row: Record<string, unknown>) => { storeOrders.update(row); dataOrders.value = [...storeOrders.rows] }')
+    expect(sfc).toContain('const deleteOrders = (row: Record<string, unknown>) => { storeOrders.remove(String(row.id)); dataOrders.value = [...storeOrders.rows] }')
+  })
+
+  it('renders an ops toolbar above the blocks with one handler per operation', () => {
+    const sfc = renderPage(spec, orders)
+    expect(sfc).toContain('<div class="container ops" role="toolbar">')
+    expect(sfc).toContain('@click="refreshOrders"')
+    expect(sfc).toContain('@click="exportOrders"')
+    // route 操作在模板里内联 $router.push，不在 script 里生成 const
+    expect(sfc).toContain(`@click="$router.push('/orders/new')"`)
+    expect(sfc).toContain('const refreshOrders = () => { dataOrders.value = [...storeOrders.rows] }')
+    expect(sfc).toContain(`const exportOrders = () => { downloadCsv('订单', storeOrders.rows) }`)
+    expect(sfc).toContain(`<style scoped>`)
+    expect(sfc).toContain(`.ops {`)
+  })
+
+  it('binds a FormPanel to its form: fields const, submit label, on-save handler', () => {
+    const sfc = renderPage(spec, form)
+    // renderFormFields 返回单层 JSON 文本，断言只包一层 stringify
+    expect(sfc).toContain(`const formFieldsOrderForm = ${JSON.stringify([
+      { key: 'customer', label: '客户', type: 'string', required: true, placeholder: '客户名称' },
+      { key: 'amount', label: '金额', type: 'number', validate: { min: 0, max: 999999 } },
+      { key: 'status', label: '状态', type: 'enum', options: ['待处理', '已发货', '已完成'] },
+    ])}`)
+    expect(sfc).toContain(`:fields="formFieldsOrderForm"`)
+    expect(sfc).toContain(`:submit-label="'保存订单'"`)
+    expect(sfc).toContain(`:on-save="onSaveOrderForm"`)
+    // /orders/new 页没有 DataTable，refreshes 为空——onSave 只写 store，不带表格刷新
+    expect(sfc).toContain(`const onSaveOrderForm = (row: Record<string, unknown>) => { storeOrders.update(row) }`)
+    // form 选择器与 onSave 都不出现在模型 props const 里（codegen 注入/剥离）
+    expect(sfc).not.toContain('"form":')
+    expect(sfc).not.toContain('"collection":')
+  })
+
+  it('keeps a static FormPanel (no form) on the old code path', () => {
+    const settings = spec.pages.find((page) => page.route === '/settings')!
+    const sfc = renderPage(spec, settings)
+    expect(sfc).not.toContain('formFields')
+    expect(sfc).not.toContain('useCollectionRows')
+    // 无 form 绑定的 FormPanel 走旧路径：props 直接 v-bind，没有 :fields 注入
+    expect(sfc).toContain('v-bind="props0"')
+    expect(sfc).not.toContain('<div class="container ops"')
   })
 })
