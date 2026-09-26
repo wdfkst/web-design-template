@@ -27,6 +27,13 @@ export interface OpenAISpecDrafterOptions {
    * off is safe: the reply is parsed leniently and falls back to the raw string.
    */
   sendResponseFormat?: boolean
+  /**
+   * Relay-side completion budget. The relay charges only the answer (not its
+   * hidden reasoning pass) against this, so without it a relay-default cap can
+   * truncate a long draft mid-object — the reply then cannot parse and every
+   * retry fails with `(root): expected object, received string`.
+   */
+  maxTokens?: number
 }
 
 const DEFAULT_BASE_URL = 'https://api.openai.com/v1'
@@ -292,6 +299,7 @@ export function createOpenAISpecDrafter(options: OpenAISpecDrafterOptions): Spec
           model,
           messages,
           ...(options.sendResponseFormat === false ? {} : { response_format: { type: 'json_object' } }),
+          ...(options.maxTokens === undefined ? {} : { max_tokens: options.maxTokens }),
           temperature: options.temperature ?? 0.4,
         }),
       })

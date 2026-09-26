@@ -39,6 +39,7 @@ function buildDrafter(apiKey: string): (s: EffectiveSettings['spec']) => SpecDra
       model: settings.model,
       baseUrl: settings.baseUrl,
       sendResponseFormat: settings.sendResponseFormat,
+      maxTokens: 6000,
     })
 }
 

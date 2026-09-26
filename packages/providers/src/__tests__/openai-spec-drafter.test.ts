@@ -312,6 +312,18 @@ describe('createOpenAISpecDrafter', () => {
     expect(calls[0]!.body.response_format).toEqual({ type: 'json_object' })
   })
 
+  test('sends max_tokens when configured', async () => {
+    const { calls, drafter } = drafterWith(chatReply('{}'), 200, { maxTokens: 6000 })
+    await drafter.draft({ description: 'a landing page', attempt: 1 })
+    expect(calls[0]!.body.max_tokens).toBe(6000)
+  })
+
+  test('omits max_tokens when not configured', async () => {
+    const { calls, drafter } = drafterWith(chatReply('{}'))
+    await drafter.draft({ description: 'a landing page', attempt: 1 })
+    expect(calls[0]!.body.max_tokens).toBeUndefined()
+  })
+
   test('asks the model to plan an outline before writing the draft', async () => {
     const { calls, drafter } = drafterWith(chatReply('{}'))
 
