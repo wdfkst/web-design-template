@@ -4,6 +4,6 @@ import type { BlockDefinition } from '../slot.js'
 export const StatsGrid: BlockDefinition = {
   component: 'StatsGrid',
   pageTypes: ['dashboard'],
-  props: { heading: 'string', stats: '{ label, value, delta?, suffix? }[]' },
+  props: { heading: 'string', stats: '{ label, value, delta?, suffix?, chart?, series? }[]' },
   slots: [],
 }

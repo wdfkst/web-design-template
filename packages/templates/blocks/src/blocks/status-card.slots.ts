@@ -6,7 +6,7 @@ export const StatusCard: BlockDefinition = {
   pageTypes: ['dashboard', 'list-detail'],
   props: {
     heading: 'string',
-    items: '{ label, value, tone? }[]',
+    items: '{ label, value, tone?, chart?, series? }[]',
     icon: 'string',
   },
   slots: [],
