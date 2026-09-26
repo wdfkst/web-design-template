@@ -492,6 +492,20 @@ describe('createOpenAISpecDrafter', () => {
     expect(system).toMatch(/"operations",\s*\n?\s*"collections", and "forms" may be omitted/)
   })
 
+  test('gives every editable collection an id field, in the example and the semantics', async () => {
+    const { calls, drafter } = drafterWith(chatReply('{}'))
+
+    await drafter.draft({ description: 'a management system', attempt: 1 })
+
+    const system = systemOf(calls[0]!)
+    // The schema rejects a collection whose actions include edit/delete when its
+    // model has no "id" key; the model had to learn the rule from the prompt,
+    // so the example shows the id field and the bullet states the rule.
+    expect(system).toMatch(/"id": \{ "type": "number", "label": "编号" \}/)
+    expect(system).toMatch(/with "edit" or "delete" in its actions needs an "id" field/)
+    expect(system).toMatch(/read-only table/)
+  })
+
   test('tells the model to reply with only the JSON object, no fences or prose', async () => {
     const { calls, drafter } = drafterWith(chatReply('{}'))
 
