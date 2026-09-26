@@ -233,6 +233,8 @@ function systemPrompt(): string {
     '  them once around every page, derived from your own page list. They are not in the catalogue',
     '  above, and must never appear in "pages".',
     '- Routes must be unique and start with "/". targetStack is always "vue3".',
+    '- Respond with only the JSON object itself. No prose before or after it, no code fences,',
+    '  no markdown, no trailing commentary — the response must parse as exactly one JSON object.',
   ].join('\n')
 }
 

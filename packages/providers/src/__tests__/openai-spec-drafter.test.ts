@@ -479,4 +479,18 @@ describe('createOpenAISpecDrafter', () => {
     // The omission list now includes the new optional draft keys.
     expect(system).toMatch(/"operations",\s*\n?\s*"collections", and "forms" may be omitted/)
   })
+
+  test('tells the model to reply with only the JSON object, no fences or prose', async () => {
+    const { calls, drafter } = drafterWith(chatReply('{}'))
+
+    await drafter.draft({ description: 'a management system', attempt: 1 })
+
+    const system = systemOf(calls[0]!)
+    // A model wrapping the draft in a code fence or leading prose made the whole
+    // reply fail zod at the root ("expected object, received string"); the rule
+    // now says the response must parse as exactly one JSON object.
+    expect(system).toMatch(/Respond with only the JSON object/)
+    expect(system).toMatch(/no code fences/)
+    expect(system).toMatch(/must parse as exactly one JSON object/)
+  })
 })
