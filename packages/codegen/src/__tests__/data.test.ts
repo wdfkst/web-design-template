@@ -1,7 +1,27 @@
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { renderCollections } from '../data.js'
 import { renderStore } from '../store.js'
 import { dataModelSpec } from './fixture.js'
+
+const emitDir = join(dirname(fileURLToPath(import.meta.url)), '.tmp-emit')
+
+beforeAll(async () => {
+  await rm(emitDir, { recursive: true, force: true })
+  await mkdir(emitDir, { recursive: true })
+  await writeFile(join(emitDir, 'mock.ts'), renderCollections(dataModelSpec()))
+  await writeFile(join(emitDir, 'store.ts'), renderStore(dataModelSpec()))
+})
+
+afterAll(async () => {
+  await rm(emitDir, { recursive: true, force: true })
+})
+
+async function emittedStore() {
+  return import(pathToFileURL(join(emitDir, 'store.ts')).toString())
+}
 
 describe('renderCollections (src/data/mock.ts)', () => {
   const mock = renderCollections(dataModelSpec())
@@ -56,9 +76,43 @@ describe('renderStore (src/data/store.ts)', () => {
     expect(store).toContain('remove(id: string): void')
   })
 
-  it('implements update as an upsert for form-created rows', () => {
-    expect(store).toContain('Upsert')
-    expect(store).toContain('id: `row-${rows.length + 1}`')
+  it('replaces rows by id and allocates a non-colliding id after removal', async () => {
+    const { createCollectionStore } = await emittedStore()
+    const replacement = createCollectionStore([{ id: 'row-1', customer: '甲' }])
+    replacement.update({ id: 'row-1', customer: '乙' })
+    expect(replacement.rows).toEqual([{ id: 'row-1', customer: '乙' }])
+
+    const appended = createCollectionStore([{ id: 'row-1', customer: '甲' }, { id: 'row-2', customer: '乙' }])
+    appended.remove('row-1')
+    appended.update({ customer: '丙' })
+    expect(appended.rows.map((row: { id: string }) => row.id)).toEqual(['row-2', 'row-3'])
+  })
+
+  it('sorts numeric columns numerically', async () => {
+    const { createCollectionStore } = await emittedStore()
+    const collection = createCollectionStore([{ id: 'row-1', amount: 1000 }, { id: 'row-2', amount: 117 }])
+    expect(collection.sort('amount', 'asc').map((row: { id: string }) => row.id)).toEqual(['row-2', 'row-1'])
+  })
+
+  it('escapes commas, quotes, and newlines in CSV cells', async () => {
+    const { rowsToCsv } = await emittedStore()
+    const csv = rowsToCsv([{ id: 'row-1', customer: '上海, 有限公司', note: '多行\n备注', quote: '他说"你好"' }])
+    expect(csv).toContain('"上海, 有限公司"')
+    expect(csv).toContain('"多行\n备注"')
+    expect(csv).toContain('"他说""你好"""')
+  })
+
+  it('executes search, paging, lookup, add, and isolated store instances', async () => {
+    const { createCollectionStore, useCollectionRows } = await emittedStore()
+    const collection = createCollectionStore([{ id: 'row-1', customer: '甲' }, { id: 'row-2', customer: '乙' }])
+    expect(collection.search(' 乙 ')).toEqual([{ id: 'row-2', customer: '乙' }])
+    expect(collection.page(1, 2)).toEqual([{ id: 'row-2', customer: '乙' }])
+    expect(collection.getById('row-1')).toEqual({ id: 'row-1', customer: '甲' })
+    collection.add({ id: 'manual', customer: '丙' })
+    expect(collection.rows).toHaveLength(3)
+    const first = useCollectionRows('orders')
+    first.remove('row-1')
+    expect(useCollectionRows('orders').rows).toHaveLength(2)
   })
 
   it('exposes useCollectionRows and a pure CSV helper for export ops', () => {
