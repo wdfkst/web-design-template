@@ -463,4 +463,20 @@ describe('createOpenAISpecDrafter', () => {
     expect(system).toMatch(/near-white|#f5f6f8/i)
     expect(system).toMatch(/3-6 pages/)
   })
+
+  test('shows the validate object shape in the forms example and the semantics list', async () => {
+    const { calls, drafter } = drafterWith(chatReply('{}'))
+
+    await drafter.draft({ description: 'a management system', attempt: 1 })
+
+    const system = systemOf(calls[0]!)
+    // The model was asked for validation but never shown its shape, and emitted
+    // strings the FormFieldSchema rejects; the example now demonstrates the
+    // object form and the bullet restates it explicitly.
+    expect(system).toMatch(/"validate": \{ "min": 1, "max": 40 \}/)
+    expect(system).toMatch(/"validate": \{ "pattern": "email" \}/)
+    expect(system).toMatch(/"validate" as \{ "min": number, "max": number, "pattern": "email" \}/)
+    // The omission list now includes the new optional draft keys.
+    expect(system).toMatch(/"operations",\s*\n?\s*"collections", and "forms" may be omitted/)
+  })
 })
