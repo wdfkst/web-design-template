@@ -6,7 +6,7 @@ import { promisify } from 'node:util'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { generateProject } from '../project.js'
 import { writeProject } from '../write.js'
-import { landingSpec } from './fixture.js'
+import { dataModelSpec, landingSpec } from './fixture.js'
 
 const run = promisify(execFile)
 
@@ -107,5 +107,30 @@ describe('the generated project builds', () => {
     const dist = await readdir(join(outDir, 'dist'))
     expect(dist).toContain('index.html')
     expect(dist).toContain('assets')
+  }, 180_000)
+
+  it('builds a data-model project: data files, bound tables and forms typecheck', async () => {
+    const dataOut = await mkdtemp(join(tmpdir(), 'vudt-data-'))
+    try {
+      await writeProject(dataModelSpec(), {
+        templateDir: TEMPLATE_DIR,
+        outDir: dataOut,
+        nodeModules: 'link',
+      })
+
+      const { expectedAssets } = generateProject(dataModelSpec())
+      for (const asset of expectedAssets) {
+        await writeFile(join(dataOut, asset.path), Buffer.alloc(0))
+      }
+
+      await run('node', [
+        resolve(TEMPLATE_DIR, 'node_modules/vue-tsc/bin/vue-tsc.js'),
+        '--noEmit',
+        '-p',
+        join(dataOut, 'tsconfig.json'),
+      ])
+    } finally {
+      await rm(dataOut, { recursive: true, force: true })
+    }
   }, 180_000)
 })
