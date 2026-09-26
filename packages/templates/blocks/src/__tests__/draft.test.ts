@@ -248,3 +248,58 @@ describe('deriveSpecInput gate: the draft has to be a site, not a page', () => {
     expect(feedback).toMatch(/^pages\[0\]\.blocks: /m)
   })
 })
+
+describe('deriveSpecInput data-model passthrough', () => {
+  it('carries collections, forms and page operations into the derived spec', () => {
+    const draft = landingDraft([
+      homePage(),
+      {
+        route: '/orders',
+        title: 'Orders',
+        pageType: 'list-detail',
+        blocks: [
+          { component: 'DataTable', props: { collection: 'orders' } },
+          { component: 'StatsGrid', props: { heading: 'Overview' } },
+        ],
+        operations: [{ id: 'refresh-orders', label: 'Refresh', kind: 'refresh', target: 'orders' }],
+      },
+      // homePage()'s HeroSplit CTA points at /pricing, so the third page has to
+      // declare that route or the CTA gate fires before the passthrough runs.
+      fillerPage('/pricing', 'Pricing'),
+    ])
+    draft.collections = [
+      {
+        id: 'orders',
+        label: 'Orders',
+        model: { id: { type: 'string', label: 'ID' }, name: { type: 'string', label: 'Name' } },
+        fields: ['name'],
+        seed: 4,
+        actions: ['search', 'edit', 'delete', 'export'],
+      },
+    ]
+    draft.forms = [
+      {
+        id: 'order-form',
+        label: 'Order form',
+        collection: 'orders',
+        fields: [{ key: 'name', label: 'Name', type: 'string', required: true }],
+        submit: { label: '保存', toast: '已保存' },
+      },
+    ]
+
+    const value = okValue(deriveSpecInput(draft))
+    expect(value.collections[0]!.id).toBe('orders')
+    expect(value.forms[0]!.id).toBe('order-form')
+    const orders = value.pages.find((page) => page.route === '/orders')!
+    expect(orders.operations).toHaveLength(1)
+    expect(orders.operations[0]!.kind).toBe('refresh')
+    expect(parseProjectSpecInput(value).ok).toBe(true)
+  })
+
+  it('defaults the new fields away for drafts without them (zero-break)', () => {
+    const value = okValue(deriveSpecInput(landingDraft()))
+    expect(value.collections).toEqual([])
+    expect(value.forms).toEqual([])
+    expect(value.pages[0]!.operations).toEqual([])
+  })
+})

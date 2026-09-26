@@ -1,6 +1,9 @@
 import {
   BlockSchema,
+  CollectionSchema,
+  FormSchema,
   MetaSchema,
+  OperationSchema,
   PageSchema,
   PageTypeSchema,
   StyleBibleSchema,
@@ -30,6 +33,7 @@ const DraftPageSchema = z.object({
   title: PageSchema.shape.title,
   pageType: PageTypeSchema,
   blocks: z.array(DraftBlockSchema).min(2),
+  operations: z.array(OperationSchema).default([]),
 })
 
 /**
@@ -48,6 +52,8 @@ export const ProjectDraftSchema = z.object({
   meta: MetaSchema,
   theme: ThemeSchema,
   styleBible: StyleBibleSchema,
+  collections: z.array(CollectionSchema).default([]),
+  forms: z.array(FormSchema).default([]),
   pages: z.array(DraftPageSchema).min(3),
 })
 
@@ -77,7 +83,7 @@ export function deriveSpecInput(draft: unknown): DeriveSpecResult {
   const parsed = ProjectDraftSchema.safeParse(draft)
   if (!parsed.success) return { ok: false, feedback: formatIssues(parsed.error.issues) }
 
-  const { meta, theme, styleBible, pages } = parsed.data
+  const { meta, theme, styleBible, collections, forms, pages } = parsed.data
 
   try {
     const routes = new Set(pages.map((page) => page.route))
@@ -102,16 +108,17 @@ export function deriveSpecInput(draft: unknown): DeriveSpecResult {
         meta,
         theme,
         styleBible,
-        // A draft declares no data model yet; both default to empty in the spec.
-        collections: [],
-        forms: [],
+        // Data semantics come straight from the draft: the schemas above are the
+        // spec's own, so passing the parsed values through cannot drift. Drafts
+        // that declare nothing default to empty, which is the zero-break path.
+        collections,
+        forms,
         pages: derivations.map(({ page, derived }) => ({
           route: page.route,
           title: page.title,
           pageType: page.pageType,
           blocks: derived.blocks,
-          // A draft declares no operations yet; the spec defaults them to empty.
-          operations: [],
+          operations: page.operations,
         })),
         assets,
       },

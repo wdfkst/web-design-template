@@ -445,4 +445,22 @@ describe('createOpenAISpecDrafter', () => {
     // "illustration" slot that HeroSplit owns instead of its own "decoration".
     expect(system).toMatch(/CtaBanner's is "decoration"/)
   })
+
+  test('documents the data semantics section and the new draft keys', async () => {
+    const { calls, drafter } = drafterWith(chatReply('{}'))
+
+    await drafter.draft({ description: 'a management system', attempt: 1 })
+
+    const system = systemOf(calls[0]!)
+    expect(system).toMatch(/Data semantics/i)
+    expect(system).toMatch(/searchable\/sortable\/pageable|becomes searchable/i)
+    expect(system).toMatch(/omit collections\/forms entirely/i)
+    expect(system).toMatch(/"collections"/)
+    expect(system).toMatch(/"forms"/)
+    expect(system).toMatch(/operations/)
+    // 老锚点保持通过（块目录、主题规则、页面下限等）
+    expect(system).toMatch(/APP blocks \(back-office \/ management systems only\)/i)
+    expect(system).toMatch(/near-white|#f5f6f8/i)
+    expect(system).toMatch(/3-6 pages/)
+  })
 })
