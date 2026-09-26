@@ -32,6 +32,22 @@ describe('renderCollections (src/data/mock.ts)', () => {
     expect(mock).toContain('"orders": [')
   })
 
+  it('separates multiple collection entries with commas (valid object literal)', () => {
+    const multi = renderCollections({
+      ...dataModelSpec(),
+      collections: [
+        { ...dataModelSpec().collections[0]!, id: 'aaa' },
+        { ...dataModelSpec().collections[0]!, id: 'bbb' },
+      ],
+    })
+    expect(multi).toContain('  "aaa": [\n')
+    expect(multi).toContain('\n  ],\n  "bbb": [\n')
+    // The empty case stays a valid empty object too.
+    expect(renderCollections({ ...dataModelSpec(), collections: [] })).toContain(
+      'export const MOCK_ROWS: Record<string, Row[]> = {\n}',
+    )
+  })
+
   it('generates the requested number of rows, each with a deterministic id', () => {
     // seed: 2 → row-1, row-2（JSON.stringify 紧凑格式，键后无空格）
     expect(mock).toContain('"id":"row-1"')

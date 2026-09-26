@@ -23,7 +23,7 @@ export function renderCollections(spec: ProjectSpec): string {
     'export type Row = Record<string, unknown> & { id: string }',
     '',
     'export const MOCK_ROWS: Record<string, Row[]> = {',
-    ...entries,
+    ...entries.map((entry) => `${entry},`),
     '}',
     '',
   ].join('\n')
