@@ -142,23 +142,39 @@ describe('mergeDerivedAssets', () => {
 
   it('derives no assets for the slotless DataTable', () => {
     const { blocks, assets } = derivePageAssets('/', [
-      { component: 'DataTable', props: { columns: [{ key: 'name', label: 'Name' }], rows: [{ cells: ['Acme'] }] } },
+      {
+        component: 'DataTable',
+        props: {
+          columns: [{ key: 'name', label: 'Name' }],
+          rows: [{ cells: ['Acme'] }],
+          collection: 'orders',
+        },
+      },
     ])
     expect(assets).toHaveLength(0)
     expect(blocks[0]!.props).toEqual({
       columns: [{ key: 'name', label: 'Name' }],
       rows: [{ cells: ['Acme'] }],
+      collection: 'orders',
     })
   })
 
   it('derives no assets for the slotless FormPanel', () => {
     const { blocks, assets } = derivePageAssets('/', [
-      { component: 'FormPanel', props: { fields: [{ label: 'Name', type: 'text' }], submitLabel: 'Save' } },
+      {
+        component: 'FormPanel',
+        props: {
+          fields: [{ key: 'name', label: 'Name', type: 'string' }],
+          submitLabel: 'Save',
+          form: 'order-form',
+        },
+      },
     ])
     expect(assets).toHaveLength(0)
     expect(blocks[0]!.props).toEqual({
-      fields: [{ label: 'Name', type: 'text' }],
+      fields: [{ key: 'name', label: 'Name', type: 'string' }],
       submitLabel: 'Save',
+      form: 'order-form',
     })
   })
 
