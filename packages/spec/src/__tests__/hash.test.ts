@@ -43,6 +43,25 @@ describe('assetContentHash', () => {
 })
 
 describe('finalizeSpec', () => {
+  it('uses admin theme colors for both the returned bible and asset hashes without mutating input', () => {
+    const input = validSpecInput()
+    input.experience = { kind: 'admin', navigation: [], presentation: { appearance: 'soft-glass', decoration: 'balanced', shell: 'sidebar' } }
+    input.theme.colorTokens.primary = '#123456'
+    input.theme.colorTokens.secondary = '#123456'
+    const original = [...input.styleBible.palette]
+    const result = finalizeSpec(input)
+    expect(result.styleBible.palette).toEqual(['#123456', '#123456', '#f59e0b'])
+    expect(input.styleBible.palette).toEqual(original)
+    expect(result.assets[0]!.contentHash).toBe(assetContentHash(input.assets[0]!, result.styleBible))
+    expect(result.assets[0]!.contentHash).not.toBe(assetContentHash(input.assets[0]!, input.styleBible))
+  })
+  it('preserves legacy style palettes and hashes', () => {
+    const input = validSpecInput()
+    input.theme.colorTokens.primary = '#123456'
+    const result = finalizeSpec(input)
+    expect(result.styleBible).toEqual(input.styleBible)
+    expect(result.assets[0]!.contentHash).toBe(assetContentHash(input.assets[0]!, input.styleBible))
+  })
   it('produces a spec that passes the resolved schema', () => {
     const finalized = finalizeSpec(validSpecInput())
     const result = parseProjectSpec(finalized)

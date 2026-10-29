@@ -21,6 +21,25 @@ const records = { id: 'recent', title: '记录', kind: 'records', collection: 'i
 const parse = (config: Record<string, unknown>, pageType?: string) => ProjectSpecInputSchema.safeParse(input(config, pageType))
 
 describe('personalized admin contract', () => {
+  it('allows one welcome and one empty panel on lists and workbenches only', () => {
+    const panel = (component: string) => ({ component, props: {}, assetBindings: {} })
+    for (const config of [list, { mode: 'workbench', collections: ['items'] }]) {
+      const source = input(config, config.mode === 'workbench' ? 'dashboard' : 'list-detail')
+      const pages = source.pages.map((page, i) => i ? page : { ...page, blocks: [panel('EmptyStatePanel'), panel('AdminWelcomePanel')] })
+      expect(ProjectSpecInputSchema.safeParse({ ...source, pages }).success).toBe(true)
+      expect(ProjectSpecInputSchema.safeParse({ ...source, pages: pages.map((page, i) => i ? page : { ...page, blocks: [panel('AdminWelcomePanel'), panel('AdminWelcomePanel')] }) }).success).toBe(false)
+      expect(ProjectSpecInputSchema.safeParse({ ...source, experience: { ...source.experience, presentation: { decoration: 'minimal' } }, pages }).success).toBe(false)
+    }
+    const source = input(list)
+    for (const [mode, pageType] of [['detail', 'list-detail'], ['form', 'form'], ['settings', 'settings'], ['auth', 'auth']]) {
+      const config = mode === 'detail' ? { mode, collection: 'items', returnRoute: '/' } : mode === 'auth' ? undefined : { mode, form: 'item-form', returnRoute: '/' }
+      expect(ProjectSpecInputSchema.safeParse({ ...source, pages: [{ ...source.pages[0], pageType, admin: config, blocks: [panel('AdminWelcomePanel')] }] }).success).toBe(false)
+    }
+    expect(ProjectSpecInputSchema.safeParse({ ...source, pages: source.pages.map((page, i) => i ? page : { ...page, blocks: [panel('AdminWelcomePanel'), panel('EmptyStatePanel'), panel('EmptyStatePanel')] }) }).success).toBe(false)
+    const legacy = validSpecInput()
+    legacy.pages[0]!.blocks = [panel('AdminWelcomePanel')]
+    expect(ProjectSpecInputSchema.safeParse(legacy).success).toBe(false)
+  })
   it('preserves legacy specs without injecting presentation', () => {
     expect(ProjectSpecInputSchema.parse(input(list)).experience).not.toHaveProperty('presentation')
     expect(ProjectSpecInputSchema.safeParse(validSpecInput()).success).toBe(true)

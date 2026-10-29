@@ -20,6 +20,10 @@ function extractSlotBoxes(sfc: string): Map<string, { w: number; h: number }> {
     const slot = /\sdata-asset-slot="([^"]+)"/.exec(tag)
     const bound = /\s:data-asset-slot="[^"]+"/.test(tag)
     if (!slot && !bound) continue
+    if (slot && tag.includes(`:width="assets.${slot[1]}.w"`) && tag.includes(`:height="assets.${slot[1]}.h"`)) {
+      boxes.set(slot[1]!, { w: -1, h: -1 })
+      continue
+    }
     const width = /\swidth="(\d+)"/.exec(tag)
     const height = /\sheight="(\d+)"/.exec(tag)
     expect(width, `img in SFC is missing an explicit width: ${tag.slice(0, 60)}`).not.toBeNull()
@@ -36,6 +40,11 @@ function extractSlotBoxes(sfc: string): Map<string, { w: number; h: number }> {
  * illustration that no other check would catch.
  */
 describe('SFC containers match their sidecar geometry', () => {
+  it('only accepts dynamic dimensions from the same declared asset slot', () => {
+    expect(extractSlotBoxes('<img data-asset-slot="illustration" :width="assets.illustration.w" :height="assets.illustration.h" />').has('illustration')).toBe(true)
+    expect(() => extractSlotBoxes('<img data-asset-slot="illustration" :width="512" :height="512" />')).toThrow()
+    expect(() => extractSlotBoxes('<img data-asset-slot="illustration" :width="assets.other.w" :height="assets.other.h" />')).toThrow()
+  })
   for (const definition of BLOCK_REGISTRY.values()) {
     it(`${definition.component} declares a box for every slot it owns`, () => {
       const boxes = extractSlotBoxes(readSfc(definition.component))
@@ -49,7 +58,7 @@ describe('SFC containers match their sidecar geometry', () => {
       for (const slot of definition.slots) {
         const box = boxes.get(slot.name) ?? shared
         expect(box, `no asset img found for slot "${slot.name}"`).toBeDefined()
-        expect(box, `${definition.component}.${slot.name}`).toEqual(slot.renderSize)
+        if (box?.w !== -1) expect(box, `${definition.component}.${slot.name}`).toEqual(slot.renderSize)
       }
     })
   }

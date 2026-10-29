@@ -71,12 +71,14 @@ export function checkAdminIntegrity(spec: Checked, ctx: z.RefinementCtx): void {
     const path = ['pages', index] as (string | number)[]
     if (!admin) {
       if (page.blocks.length === 0) issue([...path, 'blocks'], 'legacy pages require blocks')
+      if (page.blocks.some(block => block.component === 'AdminWelcomePanel')) issue([...path, 'blocks'], 'welcome panel requires admin experience')
       if (page.admin) issue([...path, 'admin'], 'admin page requires admin experience')
       return
     }
     if (page.operations.length) issue([...path, 'operations'], 'admin pages use typed actions, not legacy operations')
-    if (page.blocks.length > 1) issue([...path, 'blocks'], 'admin pages support at most one illustration panel')
-    const allowedBlocks = page.pageType === 'auth' ? ['AuthPanel'] : ['EmptyStatePanel']
+    const welcomeAllowed = page.pageType !== 'auth' && (page.admin?.mode === 'list' || page.admin?.mode === 'workbench') && !(spec.experience?.kind === 'admin' && spec.experience.presentation?.decoration === 'minimal')
+    const allowedBlocks = page.pageType === 'auth' ? ['AuthPanel'] : welcomeAllowed ? ['EmptyStatePanel', 'AdminWelcomePanel'] : ['EmptyStatePanel']
+    if (page.blocks.length > allowedBlocks.length || new Set(page.blocks.map(block => block.component)).size !== page.blocks.length) issue([...path, 'blocks'], 'admin pages allow at most one panel of each permitted kind')
     if (page.blocks.some(b => !allowedBlocks.includes(b.component))) issue([...path, 'blocks'], 'admin pages cannot use incompatible blocks')
     const config = page.admin
     if (!config) {

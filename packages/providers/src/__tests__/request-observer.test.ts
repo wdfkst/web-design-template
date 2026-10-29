@@ -27,8 +27,8 @@ it('records the final image prompt and reports rejected requests', async () => {
     onRequest: input => { events.push(input); return status => events.push(status) },
     fetch: async (_url, init) => { sent = JSON.parse(String(init?.body)); return new Response('', { status: 403 }) },
   })
-  await expect(provider.generate({ assetId: 'hero', prompt: 'tray', negativePrompt: 'text', size: { w: 1024, h: 1024 }, transparent: false, seed: 1 })).rejects.toThrow('403')
+  await expect(provider.generate({ assetId: 'hero', prompt: 'tray, color palette #123456, #0ea5e9, #f59e0b', negativePrompt: 'no text, no watermark', size: { w: 1024, h: 1024 }, transparent: false, seed: 1 })).rejects.toThrow('403')
   expect(events[0].prompt).toBe(sent.prompt)
-  expect(events[0].prompt).toBe('tray\n\nAvoid: text')
+  expect(events[0].prompt).toBe('tray, color palette #123456, #0ea5e9, #f59e0b\n\nAvoid: no text, no watermark')
   expect(events[1]).toBe('failed')
 })

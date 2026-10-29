@@ -37,6 +37,25 @@ describe('planAssetJobs', () => {
 })
 
 describe('generateAssets', () => {
+  it('sends the effective admin palette and invalidates warm cache after a primary color change', async () => {
+    const input = landingSpec()
+    input.experience = { kind: 'admin', navigation: [], presentation: { appearance: 'soft-glass', decoration: 'balanced', shell: 'sidebar' } }
+    input.theme.colorTokens.primary = '#123456'
+    const firstSpec = finalizeSpec(input)
+    const cache = new MemoryImageCache(), first = new StubProvider()
+    await generateAssets(firstSpec, { provider: first, outDir: await tempOut(), cache })
+    expect(first.requests[0]!.prompt).toContain('#123456')
+    expect(first.requests[0]!.negativePrompt).toContain(firstSpec.styleBible.negativePrompt)
+    const cached = new StubProvider()
+    await generateAssets(firstSpec, { provider: cached, outDir: await tempOut(), cache })
+    expect(cached.requests).toHaveLength(0)
+    input.theme.colorTokens.primary = '#654321'
+    const nextSpec = finalizeSpec(input), next = new StubProvider()
+    await generateAssets(nextSpec, { provider: next, outDir: await tempOut(), cache })
+    expect(nextSpec.assets[0]!.contentHash).not.toBe(firstSpec.assets[0]!.contentHash)
+    expect(next.requests[0]!.prompt).toContain('#654321')
+    expect(next.requests[0]!.prompt).not.toContain('#123456')
+  })
   it('writes every file at the path codegen expects', async () => {
     const spec = landingSpec()
     const outDir = await tempOut()

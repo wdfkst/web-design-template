@@ -11,6 +11,7 @@ describe('block registry', () => {
 
   it('exposes the expected component set', () => {
     expect(listBlockComponents()).toEqual([
+      'AdminWelcomePanel',
       'AuthPanel',
       'CtaBanner',
       'DataTable',

@@ -10,7 +10,8 @@ import type { WorkbenchConfig } from '../../data/admin-config'
 import { evaluateWorkbenchModule } from '../../data/workbench'
 import AdminWorkbenchModule from './AdminWorkbenchModule.vue'
 type Config = WorkbenchConfig | { mode?: 'workbench'; collections: string[]; shortcuts: string[]; modules?: never }
-const props = defineProps<{ title: string; emptyPanel?: EmptyPanel; config: Config }>()
+import AdminWelcomePanel, { type WelcomePanel } from './AdminWelcomePanel.vue'
+const props = defineProps<{ title: string; emptyPanel?: EmptyPanel; welcomePanel?: WelcomePanel; config: Config }>()
 const router = useRouter()
 const ids = props.config.modules ? [...new Set(props.config.modules.flatMap(module => 'collection' in module ? [module.collection] : []))] : props.config.collections
 const sources = ids.map(id => ({ definition: collections.find(item => item.id === id)!, store: useAdminCollection(id) }))
@@ -30,6 +31,7 @@ const shortcuts = computed(() => (props.config.shortcuts ?? []).map(path => ({ p
 </script>
 <template>
   <AdminPage :title="title" description="查看业务记录概况，快速进入日常工作。">
+    <AdminWelcomePanel v-if="welcomePanel" v-bind="welcomePanel" />
     <template v-if="config.modules">
       <div class="module-grid" :class="{ focus: config.variant === 'focus' }"><AdminWorkbenchModule v-for="item in modules" :key="item.module.id" v-bind="item" /></div>
       <p class="simulation-note">本地模拟数据，刷新后重置。</p>

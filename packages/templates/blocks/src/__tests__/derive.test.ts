@@ -12,6 +12,12 @@ const landing = [
 ]
 
 describe('derivePageAssets', () => {
+  it('derives the admin welcome illustration with immutable sidecar geometry', () => {
+    const { blocks, assets } = derivePageAssets('/', [{ component: 'AdminWelcomePanel', props: { headline: '欢迎' } }])
+    expect(assets).toHaveLength(1)
+    expect(assets[0]).toMatchObject({ purpose: 'empty-state', aspectRatio: '1:1', renderSize: { w: 512, h: 512 }, transparent: true, composition: 'centered' })
+    expect(blocks[0]?.assetBindings.illustration).toBe(assets[0]?.id)
+  })
   it('derives one asset per declared slot and none for slotless blocks', () => {
     const { blocks, assets } = derivePageAssets('/', landing)
     expect(blocks).toHaveLength(4)
@@ -86,7 +92,7 @@ describe('derivePageAssets', () => {
   // set — same reason the slot error lists the declared slots.
   it('names the available components in the error to help the retry prompt', () => {
     expect(() => derivePageAssets('/', [{ component: 'MadeUpBlock' }])).toThrow(
-      /MadeUpBlock.*available: AuthPanel, CtaBanner, DataTable, EmptyStatePanel, FAQAccordion, FeatureTriad, FooterSimple, FormPanel, HeroCentered, HeroSplit, LogoStrip, NavBarSimple, PricingCard, StatsBand, StatsGrid, StatusCard, TestimonialRow/,
+      /MadeUpBlock.*available: AdminWelcomePanel, AuthPanel, CtaBanner, DataTable, EmptyStatePanel, FAQAccordion, FeatureTriad, FooterSimple, FormPanel, HeroCentered, HeroSplit, LogoStrip, NavBarSimple, PricingCard, StatsBand, StatsGrid, StatusCard, TestimonialRow/,
     )
   })
 

@@ -47,7 +47,7 @@ const DEFAULT_BASE_URL = 'https://api.openai.com/v1'
  * the marketing blocks — the model should not have to scan marketing lines to
  * find what a back-office site uses.
  */
-const APP_BLOCKS = new Set(['DataTable', 'EmptyStatePanel', 'FormPanel', 'StatsGrid', 'StatusCard', 'AuthPanel'])
+const APP_BLOCKS = new Set(['AdminWelcomePanel', 'DataTable', 'EmptyStatePanel', 'FormPanel', 'StatsGrid', 'StatusCard', 'AuthPanel'])
 
 /**
  * The block catalogue, rendered for the prompt in two groups — app blocks

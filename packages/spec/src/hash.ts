@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { effectiveStyleBible } from './effective-style.js'
 import type { Asset, AssetInput } from './asset.js'
 import type { StyleBible } from './style-bible.js'
 import type { ProjectSpec, ProjectSpecInput } from './project-spec.js'
@@ -29,9 +30,10 @@ export function assetContentHash(asset: AssetInput, styleBible: StyleBible): str
 
 /** Fills in the derived hashes the model does not supply. */
 export function finalizeSpec(input: ProjectSpecInput): ProjectSpec {
+  const styleBible = effectiveStyleBible(input)
   const assets: Asset[] = input.assets.map((asset) => ({
     ...asset,
-    contentHash: assetContentHash(asset, input.styleBible),
+    contentHash: assetContentHash(asset, styleBible),
   }))
-  return { ...input, assets }
+  return { ...input, styleBible, assets }
 }

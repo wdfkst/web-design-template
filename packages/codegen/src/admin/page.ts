@@ -16,7 +16,7 @@ export function adminPageProps(spec: ProjectSpec, page: Page): Record<string, un
     }
     return { ...block.props, assets }
   })
-  return { title: page.title, ...(page.pageType === 'auth' ? { panel: blocks[0] ?? {} } : { config: page.admin, emptyPanel: blocks[0] }) }
+  return { title: page.title, ...(page.pageType === 'auth' ? { panel: blocks[0] ?? {} } : { config: page.admin, emptyPanel: blocks[page.blocks.findIndex(block => block.component === 'EmptyStatePanel')], welcomePanel: blocks[page.blocks.findIndex(block => block.component === 'AdminWelcomePanel')] }) }
 }
 export function renderAdminPage(_spec: ProjectSpec, page: Page): string {
   const components = { list: 'AdminListPage', detail: 'AdminDetailPage', form: 'AdminFormPage', settings: 'AdminSettingsPage', workbench: 'AdminWorkbenchPage' }

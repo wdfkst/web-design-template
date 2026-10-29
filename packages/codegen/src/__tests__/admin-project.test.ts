@@ -1,6 +1,13 @@
 import { expect, it } from 'vitest'
 import { landingSpec } from './fixture.js'
 import { generateProject } from '../project.js'
+import { adminPageProps } from '../admin/page.js'
+it.each([false, true])('classifies welcome and empty panels independently of block order %s', reverse => {
+  const spec = fixture()
+  const blocks = [{ component: 'AdminWelcomePanel', props: { headline: '欢迎' }, assetBindings: {} }, { component: 'EmptyStatePanel', props: { headline: '暂无' }, assetBindings: {} }]
+  spec.pages[0]!.blocks = reverse ? blocks.reverse() : blocks
+  expect(adminPageProps(spec, spec.pages[0]!)).toMatchObject({ welcomePanel: { headline: '欢迎' }, emptyPanel: { headline: '暂无' } })
+})
 
 function fixture() {
   const spec = landingSpec()
