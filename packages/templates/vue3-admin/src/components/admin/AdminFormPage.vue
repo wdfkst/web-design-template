@@ -7,7 +7,8 @@ import { useAdminCollection } from '../../composables/useAdminCollection'
 import { validateRecord } from '../../data/validation'
 import AdminPage from './AdminPage.vue'
 import AdminRecordFields from './AdminRecordFields.vue'
-const props = defineProps<{ title: string; config: { form: string; returnRoute: string } }>()
+import type { AdminFormConfig } from '../../data/admin-config'
+const props = defineProps<{ title: string; config: Omit<AdminFormConfig, 'mode'> & { mode?: 'form' } }>()
 const route = useRoute(), router = useRouter()
 const form = forms.find(item => item.id === props.config.form)!
 const collection = collections.find(item => item.id === form.collection)!
@@ -37,7 +38,7 @@ async function save() {
     <section class="form-panel">
       <Empty v-if="editing && !record" description="记录不存在，请返回列表重新选择。" />
       <Form v-else layout="vertical" @finish="save">
-        <AdminRecordFields :form="form" :collection="collection" :values="values" :errors="errors" :editing="editing" />
+        <AdminRecordFields :form="form" :collection="collection" :values="values" :errors="errors" :editing="editing" :groups="config.variant === 'grouped' ? config.groups : undefined" />
         <Space><Button type="primary" @click="save">保存</Button><Button @click="router.push(config.returnRoute)">取消</Button></Space>
       </Form>
     </section>

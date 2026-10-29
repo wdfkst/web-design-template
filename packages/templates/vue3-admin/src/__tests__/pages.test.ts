@@ -42,12 +42,14 @@ it('keeps saved unbound settings across remounts without saving cancelled drafts
     expect((wrapper.getComponent(Input).get('input').element as HTMLInputElement).value).toBe('业务中心')
   } finally { wrapper.unmount() }
 })
-it('validates form input before creating a shared record and returning to the list', async () => {
+it.each(['single', 'grouped'] as const)('%s validates form input before creating a shared record and returning to the list', async variant => {
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/form', component: { template: '<div />' } }, { path: '/', component: { template: '<div />' } }] })
   await router.push('/form'); await router.isReady()
   const store = useAdminCollection('items'), count = store.rows.value.length
-  const wrapper = mount(AdminFormPage, { props: { title: '新增商品', config: { form: 'item', returnRoute: '/' } }, global: { plugins: [router] } })
+  const wrapper = mount(AdminFormPage, { props: { title: '新增商品', config: { variant, ...(variant === 'grouped' ? { groups: [{ id: 'main', title: '业务信息', fields: ['name'] }] } : {}), form: 'item', returnRoute: '/' } }, global: { plugins: [router] } })
   try {
+    expect(wrapper.findAll('#field-item-name')).toHaveLength(1)
+    if (variant === 'grouped') expect(wrapper.get('fieldset legend').text()).toBe('业务信息')
     const save = wrapper.findAllComponents(Button).find(button => button.text().replace(/\s/g, '') === '保存')!
     await save.trigger('click'); await flushPromises()
     expect(wrapper.text()).toContain('请填写名称')
@@ -59,12 +61,16 @@ it('validates form input before creating a shared record and returning to the li
     expect(router.currentRoute.value.path).toBe('/')
   } finally { wrapper.unmount() }
 })
-it('reads shared edits by query id and offers return navigation for missing records', async () => {
+it.each(['sections', 'aside'] as const)('%s reads shared edits by query id and offers return navigation for missing records', async variant => {
+  useAdminCollection('items').rows.value = [{ id: 1, name: '原记录' }]
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/detail', component: { template: '<div />' } }, { path: '/', component: { template: '<div />' } }] })
   await router.push('/detail?id=1'); await router.isReady()
-  const wrapper = mount(AdminDetailPage, { props: { title: '详情', emptyPanel: { assets: { illustration: { src: './assets/missing.png', alt: '记录缺失插画', w: 512, h: 512 } } }, config: { collection: 'items', returnRoute: '/' } }, global: { plugins: [router] } })
+  const wrapper = mount(AdminDetailPage, { props: { title: '详情', emptyPanel: { assets: { illustration: { src: './assets/missing.png', alt: '记录缺失插画', w: 512, h: 512 } } }, config: { variant, groups: [{ id: 'identity', title: '记录信息', fields: ['name'] }], ...(variant === 'aside' ? { asideFields: ['id'] } : {}), collection: 'items', returnRoute: '/' } }, global: { plugins: [router] } })
   try {
-    expect(wrapper.text()).toContain('原记录')
+    expect(wrapper.text()).toContain('记录信息')
+    expect(wrapper.text().split('原记录')).toHaveLength(2)
+    expect(wrapper.find('aside').exists()).toBe(variant === 'aside')
+    if (variant === 'aside') expect(wrapper.get('aside').text()).toContain('编号')
     useAdminCollection('items').update(1, { name: '已修改' })
     await flushPromises()
     expect(wrapper.text()).toContain('已修改')
