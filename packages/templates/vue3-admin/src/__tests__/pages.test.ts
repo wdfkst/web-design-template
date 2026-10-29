@@ -26,6 +26,29 @@ it('derives workbench counts from shared collections', async () => {
     } finally { rows.forEach(row => store.create(row)) }
   } finally { wrapper.unmount() }
 })
+it('updates workbench modules from shared records and puts focused records first', async () => {
+  const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/', component: { template: '<div />' } }, { path: '/detail', component: { template: '<div />' } }] })
+  await router.push('/'); await router.isReady()
+  const store = useAdminCollection('items')
+  store.rows.value = [{ id: 1, name: '原记录' }]
+  const wrapper = mount(AdminWorkbenchPage, { props: { title: '工作台', config: { mode: 'workbench', variant: 'focus', primaryModuleId: 'records', modules: [
+    { id: 'count', title: '记录数', kind: 'summary', collection: 'items', metric: 'count' },
+    { id: 'records', title: '最新记录', kind: 'records', collection: 'items', fields: ['name'], limit: 1, detailRoute: '/detail' },
+  ] } }, global: { plugins: [router] } })
+  try {
+    expect(wrapper.findAll('[data-module]')[0].attributes('data-module')).toBe('records')
+    expect(wrapper.get('[data-module="count"]').text()).toContain('1')
+    store.create({ name: '新记录' }); await flushPromises()
+    expect(wrapper.get('[data-module="count"]').text()).toContain('2')
+    store.update(1, { name: '同步修改' }); await flushPromises()
+    expect(wrapper.get('[data-module="records"]').text()).toContain('同步修改')
+    expect(wrapper.get('[data-module="records"] tbody').text()).not.toContain('新记录')
+    expect(wrapper.get('[data-module="records"] a').attributes('href')).toBe('/detail?id=1')
+    store.remove(store.rows.value.map(row => row.id)); await flushPromises()
+    expect(wrapper.get('[data-module="count"]').text()).toContain('0')
+    expect(wrapper.get('[data-module="records"]').text()).toContain('暂无记录')
+  } finally { wrapper.unmount() }
+})
 it('keeps saved unbound settings across remounts without saving cancelled drafts', async () => {
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/', component: { template: '<div />' } }] })
   await router.push('/'); await router.isReady()
