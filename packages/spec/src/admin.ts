@@ -6,7 +6,7 @@ import { WorkbenchPageSchema, checkWorkbenchIntegrity } from './admin-workbench.
 
 const id = z.string().regex(/^[a-z][a-z0-9-]*$/)
 const route = z.string().regex(/^\/[a-z0-9\-/:]*$/)
-export const AdminIconSchema = z.enum(['box', 'grid', 'users', 'settings', 'file', 'layers', 'chart', 'in', 'out', 'tool'])
+export const AdminIconSchema = z.enum(['box', 'grid', 'users', 'settings', 'file', 'layers', 'chart', 'in', 'out', 'tool', 'calendar', 'task', 'media', 'document'])
 const navBase = { id, label: z.string().min(1).max(80), icon: AdminIconSchema.optional() }
 const leaf = z.object({ ...navBase, route }).strict()
 export const AdminExperienceSchema = z.object({

@@ -30,6 +30,16 @@ describe('admin layout', () => {
     await wrapper.get('button[aria-label="关闭导航"]').trigger('click')
     expect(button.attributes('aria-expanded')).toBe('false')
   })
+  it('renders topbar groups and keeps mobile navigation usable', async () => {
+    const wrapper = await render()
+    await wrapper.setProps({ presentation: { appearance: 'soft-glass', decoration: 'balanced', shell: 'topbar' }, navigation: [{ id: 'group', label: '业务', children: [{ id: 'items', label: '商品管理', route: '/' }] }] } as never)
+    expect(wrapper.classes()).toContain('is-topbar')
+    expect(wrapper.classes()).toContain('soft-glass')
+    expect(wrapper.find('[aria-label="业务分组"]').exists()).toBe(true)
+    await wrapper.get('button[aria-label="打开导航"]').trigger('click')
+    await wrapper.get('aside nav a').trigger('click')
+    expect(wrapper.get('button[aria-label="打开导航"]').attributes('aria-expanded')).toBe('false')
+  })
   it('renders auth pages without chrome', async () => {
     const wrapper = await render('/login')
     expect(wrapper.find('aside').exists()).toBe(false)
