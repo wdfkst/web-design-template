@@ -1,4 +1,6 @@
 import { expect, it } from 'vitest'
+import { FormSchema } from '@vudt/spec'
+import { personalizedAdminFixtures } from './personalized-admin-fixtures.js'
 import { landingSpec } from './fixture.js'
 import { generateProject } from '../project.js'
 import { adminPageProps } from '../admin/page.js'
@@ -36,6 +38,37 @@ it('renders admin auth assets using sidecar dimensions without legacy block impo
   expect(source).toContain('AdminAuthPage')
   expect(source).not.toContain("../blocks/")
   expect(result.files['src/modules/SigninPage/config.ts']).toContain('512')
+})
+it('documents actual page paths and form ids for customization', () => {
+  const spec = fixture()
+  spec.pages[0]!.route = '/asset-library'
+  spec.forms = [FormSchema.parse({ id: 'asset-editor', label: '素材编辑', fields: [{ key: 'name', label: '名称', type: 'string' }] })]
+  const readme = generateProject(spec).files['README.md']!
+  expect(readme).toContain('/asset-library')
+  expect(readme).toContain('src/modules/AssetLibraryPage/config.ts')
+  expect(readme).toContain('asset-editor')
+  expect(readme).toContain('src/theme/presentation.ts')
+  expect(readme).toContain('src/data/repository.ts')
+  expect(readme).toContain('刷新后重置')
+})
+it.each(['maintenance', 'media', 'registration'] as const)('preserves personalized configuration for %s', name => {
+  const spec = personalizedAdminFixtures[name]()
+  const files = generateProject(spec).files
+  const configs = Object.entries(files).filter(([path]) => path.endsWith('/config.ts')).map(([, content]) => content).join('\n')
+  expect(configs).toContain(name === 'media' ? 'cards' : 'table')
+  if (name === 'maintenance') {
+    expect(configs).toContain('grouped')
+    expect(configs).toContain('focus')
+  }
+  if (name === 'media') {
+    expect(configs).toContain('aside')
+    expect(configs).toContain('overview')
+  }
+  expect(configs).toContain('\\u003c/script>')
+  expect(configs).not.toContain('</script>')
+  expect(files['README.md']).toContain(`/${name}`)
+  expect(files['README.md']).toContain(`${name}-form`)
+  expect(files['src/theme/presentation.ts']).toContain(name === 'registration' ? 'minimal' : 'balanced')
 })
 it('rejects normalized module collisions', () => {
   const spec = fixture()

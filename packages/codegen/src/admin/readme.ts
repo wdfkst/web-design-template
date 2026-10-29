@@ -1,4 +1,7 @@
-export function renderAdminReadme(): string {
+import type { ProjectSpec } from '@vudt/spec'
+import { pageComponentName } from '../naming.js'
+
+export function renderAdminReadme(spec: ProjectSpec): string {
   return `# Vue 3 后台工程
 
 基于 Vue 3、Ant Design Vue、Vue Router 和 TypeScript。
@@ -22,6 +25,18 @@ pnpm build
 - src/theme/tokens.ts、generated.css：Ant Design Vue 与布局主题。
 - src/data/mock.ts：模型、表单和模拟种子数据。
 - src/data/repository.ts、src/composables/useAdminCollection.ts：共享数据访问层，后续 API 接入从这里替换，不必重写页面。
+
+## 本工程配置
+
+${spec.pages.map(page => `- 路由 ${JSON.stringify(page.route)}：src/modules/${pageComponentName(page.route)}/index.vue 与 src/modules/${pageComponentName(page.route)}/config.ts。`).join('\n')}
+
+表单标识：${spec.forms.map(form => JSON.stringify(form.id)).join('、') || '未配置表单'}。在 src/data/mock.ts 中维护字段与校验规则。
+
+- src/theme/presentation.ts：材质、装饰、密度与导航壳配置。
+- src/theme/tokens.ts、src/theme/generated.css：明暗模式、色板与视觉变量。
+- 页面 config.ts：列表 table/cards、详情 sections/aside、表单 single/grouped 和工作台 modules 的受控配置。
+- 插画源文件位于 public/assets；配置中的宽高由区块侧车派生，替换图片时保持比例。
+- 接入 API 时替换共享 repository，保留页面动作与字段校验，真实认证和权限需自行实现。
 
 ## 演示边界
 

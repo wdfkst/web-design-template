@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { BLOCK_REGISTRY, deriveSpecInput } from '@vudt/blocks'
-import { ProjectSpecInputSchema, PageTypeSchema, StyleBibleSchema, ThemeSchema } from '@vudt/spec'
+import { finalizeSpec, ProjectSpecInputSchema, PageTypeSchema, StyleBibleSchema, ThemeSchema } from '@vudt/spec'
 import { createOpenAISpecDrafter } from '../openai-spec-drafter.js'
 
 interface Capture {
@@ -81,7 +81,9 @@ describe('createOpenAISpecDrafter', () => {
     expect(match).not.toBeNull()
     const derived = deriveSpecInput(JSON.parse(match![1]!))
     if (!derived.ok) throw new Error(derived.feedback)
-    expect(ProjectSpecInputSchema.safeParse(derived.value).success).toBe(true)
+    const spec = finalizeSpec(ProjectSpecInputSchema.parse(derived.value))
+    expect(spec.experience).toMatchObject({ kind: 'admin', presentation: { appearance: 'soft-glass' } })
+    expect(spec.styleBible.palette).toEqual([spec.theme.colorTokens.primary, spec.theme.colorTokens.secondary, spec.theme.colorTokens.accent])
   })
   test('teaches explicit admin modes, navigation, forms and controlled icons', async () => {
     const { drafter, calls } = drafterWith(chatReply('{}'))
@@ -90,11 +92,13 @@ describe('createOpenAISpecDrafter', () => {
     expect(prompt).toContain('"kind":"admin"')
     expect(prompt).toContain('"mode":"list"')
     expect(prompt).toContain('bulk-delete')
-    expect(prompt).toContain('box, grid, users, settings, file, layers, chart, in, out, tool')
+    expect(prompt).toContain('box, grid, users, settings, file, layers, chart, in, out, tool, calendar, task, media, document')
+    expect(prompt).not.toContain('Do not request decorative images for a normal list')
     expect(prompt).toContain('blocks: []')
     expect(prompt).toContain('settings requires an unbound form')
     expect(prompt).toContain('form mode requires a collection-bound form')
-    expect(prompt).toContain('at most one illustration panel')
+    expect(prompt).toContain('one AdminWelcomePanel and one EmptyStatePanel')
+    expect(prompt).toContain('other business pages only one EmptyStatePanel')
     expect(prompt).not.toContain('which switches the whole site to the marketing shell')
   })
   test('returns the parsed JSON object the model emitted', async () => {
@@ -394,7 +398,12 @@ describe('createOpenAISpecDrafter', () => {
     // Concrete colour/radius/spacing rules, not just "restrained".
     expect(system).toContain('do not force blue-grey or teal')
     expect(system).toContain('light or dark palettes')
-    expect(system).toContain('compact density')
+    expect(system).toContain('soft-glass')
+    expect(system).toContain('comfortable')
+    expect(system).toContain('1-8 modules')
+    expect(system).toContain('primaryModuleId')
+    expect(system).toContain('mutually exclusive')
+    expect(system).toContain('refresh resets')
     expect(system).toContain('readable contrasting surfaces')
     // Negative examples — what a console is not.
     expect(system).toMatch(/do not[^.]*(large rounded cards|drop shadows|gradient buttons)/i)

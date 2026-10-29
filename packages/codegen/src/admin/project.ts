@@ -9,7 +9,7 @@ import { adminLiteral, adminPageProps, renderAdminPage } from './page.js'
 
 export function generateAdminProject(spec: ProjectSpec): GeneratedProject {
   const files = { ...renderAdminData(spec), ...renderAdminTheme(spec) }
-  files['README.md'] = renderAdminReadme()
+  files['README.md'] = renderAdminReadme(spec)
   const names = new Set<string>()
   for (const page of spec.pages) {
     const name = pageComponentName(page.route)
