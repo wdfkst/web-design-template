@@ -1,4 +1,5 @@
 import type { ImageProvider, ImageRequest } from '@vudt/imagegen'
+import { observeRequest, type RequestObserver } from './request-observer.js'
 
 export interface OpenAIImageProviderOptions {
   apiKey: string
@@ -7,6 +8,7 @@ export interface OpenAIImageProviderOptions {
   fetch?: typeof fetch
   /** Passed through when the model supports it; ignored by models that do not. */
   quality?: string
+  onRequest?: RequestObserver
 }
 
 const DEFAULT_BASE_URL = 'https://api.openai.com/v1'
@@ -45,21 +47,20 @@ export function createOpenAIImageProvider(options: OpenAIImageProviderOptions): 
           ? request.prompt
           : `${request.prompt}\n\nAvoid: ${request.negativePrompt}`
 
+      const body = {
+        model, prompt, n: 1, size: `${request.size.w}x${request.size.h}`, output_format: 'png',
+        ...(request.transparent ? { background: 'transparent' } : {}),
+        ...(options.quality === undefined ? {} : { quality: options.quality }),
+      }
+      const finish = observeRequest(options.onRequest, { kind: 'image', model, assetId: request.assetId, prompt, parameters: body }, apiKey)
+      try {
       const response = await fetchImpl(`${baseUrl}/images/generations`, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
           authorization: `Bearer ${apiKey}`,
         },
-        body: JSON.stringify({
-          model,
-          prompt,
-          n: 1,
-          size: `${request.size.w}x${request.size.h}`,
-          output_format: 'png',
-          ...(request.transparent ? { background: 'transparent' } : {}),
-          ...(options.quality === undefined ? {} : { quality: options.quality }),
-        }),
+        body: JSON.stringify(body),
       })
 
       if (!response.ok) {
@@ -96,7 +97,12 @@ export function createOpenAIImageProvider(options: OpenAIImageProviderOptions): 
       if (bytes.byteLength === 0) {
         throw new Error(`image provider returned an empty image for asset ${request.assetId}`)
       }
+      finish?.('succeeded')
       return bytes
+      } catch (error) {
+        finish?.('failed')
+        throw error
+      }
     },
   }
 }

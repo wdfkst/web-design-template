@@ -26,6 +26,7 @@ export interface GenerateAssetsOptions {
   tiers?: readonly SizeTier[]
   /** 循环开始前发一次 `{done: 0, total}`，其后每落盘一条发一次。 */
   onProgress?: (progress: AssetsProgress) => void
+  onAsset?: (assetId: string, source: 'provider' | 'cache' | 'dedup') => void
 }
 
 export interface GeneratedAsset {
@@ -104,13 +105,16 @@ export async function generateAssets(
     const hash = job.asset.contentHash
     let png = produced.get(hash)
     let cached = png !== undefined
+    if (cached) options.onAsset?.(job.asset.id, 'dedup')
 
     if (png === undefined) {
       const hit = await cache.get(hash)
       if (hit !== null) {
+        options.onAsset?.(job.asset.id, 'cache')
         png = hit
         cached = true
       } else {
+        options.onAsset?.(job.asset.id, 'provider')
         png = await provider.generate(job.request)
         providerCalls += 1
         if (png.length === 0) {

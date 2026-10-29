@@ -65,7 +65,9 @@ describe('buildTask', () => {
     spec.pages = [{ ...spec.pages[0]!, blocks: [], admin: { mode: 'workbench', collections: [], shortcuts: [] } }]
     spec.assets = []
     const provider = new PngProvider()
-    const result = await buildTask(spec, { workspace: await root.allocate('admin-happy'), templateDir: TEMPLATE_DIR, adminTemplateDir: resolve(TEMPLATE_DIR, '../vue3-admin'), typecheck: false, provider })
+    const phases: string[] = []
+    const result = await buildTask(spec, { workspace: await root.allocate('admin-happy'), templateDir: TEMPLATE_DIR, adminTemplateDir: resolve(TEMPLATE_DIR, '../vue3-admin'), typecheck: false, provider, onPhase: phase => phases.push(phase) })
+    expect(phases).toEqual(['writing', 'images', 'typecheck', 'vite'])
     expect(result.build.code).toBe(0)
     expect(provider.requests).toHaveLength(0)
     expect(await readFile(join(result.projectDir, 'src/App.vue'), 'utf8')).toContain('ConfigProvider')
@@ -111,13 +113,17 @@ describe('buildTask', () => {
     expect(first.requests.length).toBeGreaterThan(0)
 
     const second = new PngProvider()
+    const sources: string[] = []
     const result = await buildTask(spec, {
+      onAsset: (_id, source) => sources.push(source),
       workspace: await root.allocate('task-cache-b'),
       templateDir: TEMPLATE_DIR,
       provider: second,
       cache,
     })
 
+    expect(sources).toHaveLength(spec.assets.length)
+    expect(sources.every(source => source === 'cache' || source === 'dedup')).toBe(true)
     expect(second.requests).toHaveLength(0)
     expect(result.images.providerCalls).toBe(0)
   }, 300_000)

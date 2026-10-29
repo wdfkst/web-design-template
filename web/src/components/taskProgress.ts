@@ -55,6 +55,9 @@ export function buildDescription(task: TaskView): string {
 
 /** 列表页那一列用的单行摘要：当前阶段 + 走到哪儿了。 */
 export function progressLabel(task: TaskView): string {
+  const names: Record<string, string> = { drafting: '生成结构', validation: '结构校验', writing: '生成代码', images: '生成图片', typecheck: '类型检查', vite: '项目构建' }
+  const stage = task.stage && names[task.stage]
+  if (stage && task.status !== 'ready') return task.status === 'failed' ? `${stage}失败` : `正在${stage}`
   switch (task.status) {
     case 'queued':
       return '排队中'

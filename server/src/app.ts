@@ -21,6 +21,7 @@ import type { ProbeReport } from './settings-probe.js'
 import { MemorySettingsStore } from './settings-store.js'
 import { TaskStore, type TaskRecord } from './store.js'
 import { TaskObservability } from './task-observability.js'
+import type { RequestObserver } from '@vudt/providers'
 
 /** Structural: both `SettingsStore` and `MemorySettingsStore` satisfy it as-is. */
 export interface SettingsLike {
@@ -34,8 +35,8 @@ export interface AppDeps {
   adminTemplateDir?: string
   workspaceRoot: string
   /** Built per task from that task's settings snapshot, so both paths are identical. */
-  drafter: (settings: EffectiveSettings['spec']) => SpecDrafter
-  provider: (settings: EffectiveSettings['image']) => ImageProvider
+  drafter: (settings: EffectiveSettings['spec'], onRequest?: RequestObserver) => SpecDrafter
+  provider: (settings: EffectiveSettings['image'], onRequest?: RequestObserver) => ImageProvider
   /** Omitted in tests that do not care; defaults to in-memory empty settings. */
   settingsStore?: SettingsLike
   /**

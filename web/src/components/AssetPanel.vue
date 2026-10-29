@@ -25,7 +25,7 @@ const src = computed(() => assetImageUrl(props.taskId, props.asset.contentHash))
           <a-descriptions-item label="contentHash">
             <a-typography-text code copyable>{{ asset.contentHash }}</a-typography-text>
           </a-descriptions-item>
-          <a-descriptions-item label="prompt">
+          <a-descriptions-item label="图片主体描述（非最终请求）">
             <a-typography-paragraph :copyable="{ text: asset.prompt }" style="margin: 0">
               {{ asset.prompt }}
             </a-typography-paragraph>

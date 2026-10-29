@@ -76,6 +76,7 @@ onMounted(load)
 </script>
 
 <template>
+  <div class="studio-settings"><header class="studio-topbar"><div><h1>模型与配置</h1><p>为下一次生成选择结构与图片模型。已有任务保留原配置。</p></div></header>
   <a-spin :spinning="loading">
     <a-alert
       v-if="failure"
@@ -154,11 +155,11 @@ onMounted(load)
       <a-button :loading="testing" :disabled="probeUnavailable" @click="probe">测试连通性</a-button>
       <a-button @click="load">重置</a-button>
     </a-space>
-    <p v-if="probeUnavailable" style="margin-top: 12px; color: rgba(0, 0, 0, 0.45)">
+    <p v-if="probeUnavailable" style="margin-top: 12px; color: var(--studio-muted)">
       该部署未配置 API key，连通性测试不可用。
     </p>
-    <p style="margin-top: 12px; color: rgba(0, 0, 0, 0.45)">
+    <p style="margin-top: 12px; color: var(--studio-muted)">
       API key 不在这里配置，仍由环境变量提供。测试按钮会真实调用一次文案模型，产生极小的用量。
     </p>
-  </a-spin>
+  </a-spin></div>
 </template>

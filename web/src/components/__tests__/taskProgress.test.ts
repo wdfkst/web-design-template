@@ -13,6 +13,11 @@ function task(overrides: Partial<TaskView> = {}): TaskView {
   return { id: 'abc', status: 'queued', description: 'x', createdAt: 1_000, ...overrides }
 }
 
+it('uses the actual phase in task list progress', () => {
+  expect(progressLabel(task({ status: 'building', stage: 'typecheck', assetsDone: 1, assetsTotal: 1 }))).toBe('正在类型检查')
+  expect(progressLabel(task({ status: 'failed', stage: 'typecheck' }))).toBe('类型检查失败')
+})
+
 describe('currentStep / stepStatus', () => {
   it.each([
     { status: 'queued' as const, step: 0 },

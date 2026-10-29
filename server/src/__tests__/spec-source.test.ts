@@ -18,7 +18,9 @@ describe('draftSpec', () => {
   it('retries with the validator feedback appended to the request', async () => {
     const broken = { meta: { name: 'x' } }
     const drafter = new ScriptedDrafter([broken, landingDraft()])
-    const { attempts } = await draftSpec(drafter, 'a landing page')
+    const validations: string[] = []
+    const { attempts } = await draftSpec(drafter, 'a landing page', { onValidation: state => validations.push(state) })
+    expect(validations).toEqual(['started', 'failed', 'started', 'succeeded'])
 
     expect(attempts).toBe(2)
     expect(drafter.requests).toHaveLength(2)

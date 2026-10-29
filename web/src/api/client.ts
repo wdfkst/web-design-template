@@ -10,6 +10,9 @@ export interface TaskView {
   createdAt: number
   finishedAt?: number
   previewUrl?: string
+  stage?: string
+  stageStartedAt?: number
+  revision?: number
   specAttempts?: number
   providerCalls?: number
   assetsDone?: number
@@ -97,6 +100,38 @@ export function createTask(description: string): Promise<TaskView> {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ description }),
   })
+}
+
+export interface TaskRequest {
+  id: string
+  kind: 'structure' | 'image'
+  model: string
+  attempt?: number
+  assetId?: string
+  status: 'pending' | 'succeeded' | 'failed'
+  startedAt: number
+  finishedAt?: number
+  messages?: { role: string; content: string }[]
+  prompt?: string
+  parameters?: Record<string, unknown>
+  omittedReason?: string
+}
+export interface TaskEvent {
+  seq: number
+  at: number
+  stage: string
+  state: string
+  message: string
+}
+export interface ObservabilitySnapshot {
+  revision: number
+  events: TaskEvent[]
+  requests: TaskRequest[]
+  eventsTruncated: boolean
+  requestsTruncated: boolean
+}
+export function getObservability(id: string): Promise<ObservabilitySnapshot> {
+  return request<ObservabilitySnapshot>(`/tasks/${encodeURIComponent(id)}/observability`)
 }
 
 export function getSpec(id: string): Promise<SpecView> {

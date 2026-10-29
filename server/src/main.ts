@@ -5,10 +5,12 @@ import {
   createOpenAIImageProvider,
   createOpenAISpecDrafter,
   createSharpImageProcessor,
+  type RequestObserver,
 } from '@vudt/providers'
 import { resolve } from 'node:path'
 import { buildApp } from './app.js'
 import { loadConfig } from './config.js'
+import { redactRequestObserver } from './request-redaction.js'
 import type { EffectiveSettings } from './settings.js'
 import { probeSettings } from './settings-probe.js'
 import { SettingsStore } from './settings-store.js'
@@ -32,26 +34,28 @@ function required(env: NodeJS.ProcessEnv, key: string): string {
  * it to the factories and the probe, so a missing key still fails at startup and no
  * key is read in three places. It lives only in these closures.
  */
-function buildDrafter(apiKey: string): (s: EffectiveSettings['spec']) => SpecDrafter {
-  return (settings) =>
+function buildDrafter(apiKey: string): (s: EffectiveSettings['spec'], onRequest?: RequestObserver) => SpecDrafter {
+  return (settings, onRequest) =>
     createOpenAISpecDrafter({
       apiKey,
       model: settings.model,
       baseUrl: settings.baseUrl,
       sendResponseFormat: settings.sendResponseFormat,
       maxTokens: 6000,
+      ...(onRequest ? { onRequest } : {}),
     })
 }
 
 function buildImageProvider(
   apiKey: string,
   env: NodeJS.ProcessEnv,
-): (s: EffectiveSettings['image']) => ImageProvider {
-  return (settings) =>
+): (s: EffectiveSettings['image'], onRequest?: RequestObserver) => ImageProvider {
+  return (settings, onRequest) =>
     createOpenAIImageProvider({
       apiKey,
       model: settings.model,
       baseUrl: settings.baseUrl,
+      ...(onRequest ? { onRequest } : {}),
       ...(env.VUDT_IMAGE_QUALITY === undefined ? {} : { quality: env.VUDT_IMAGE_QUALITY }),
     })
 }
@@ -85,8 +89,8 @@ async function main(): Promise<void> {
     templateDir: config.templateDir,
     adminTemplateDir: config.adminTemplateDir,
     workspaceRoot: config.workspaceRoot,
-    drafter: buildDrafter(specApiKey),
-    provider: buildImageProvider(imageApiKey, process.env),
+    drafter: (settings, observer) => buildDrafter(specApiKey)(settings, redactRequestObserver(observer, [specApiKey, imageApiKey])),
+    provider: (settings, observer) => buildImageProvider(imageApiKey, process.env)(settings, redactRequestObserver(observer, [specApiKey, imageApiKey])),
     cache: new FileImageCache(config.imageCacheDir),
     settingsStore,
     // The keys go verbatim into the probe's authorization header and nowhere else:

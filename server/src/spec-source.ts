@@ -22,6 +22,7 @@ export interface DraftSpecOptions {
   maxAttempts?: number
   /** 每次尝试的模型调用之前触发，1-based。 */
   onAttempt?: (attempt: number) => void
+  onValidation?: (state: 'started' | 'succeeded' | 'failed') => void
 }
 
 const DEFAULT_MAX_ATTEMPTS = 3
@@ -53,16 +54,20 @@ export async function draftSpec(
       feedback === undefined ? { description, attempt } : { description, feedback, attempt },
     )
 
+    options.onValidation?.('started')
     const derived = deriveSpecInput(raw)
     if (!derived.ok) {
+      options.onValidation?.('failed')
       feedback = derived.feedback
       continue
     }
 
     const parsed = parseProjectSpecInput(derived.value)
     if (parsed.ok) {
+      options.onValidation?.('succeeded')
       return { spec: finalizeSpec(parsed.value), input: parsed.value, attempts: attempt }
     }
+    options.onValidation?.('failed')
     feedback = parsed.feedback
   }
 

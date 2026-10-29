@@ -33,6 +33,8 @@ export interface BuildTaskOptions {
   limits?: BuildLimits
   /** 原样转发 `generateAssets` 的图片进度；阶段划分由调用方派生。 */
   onProgress?: (progress: AssetsProgress) => void
+  onPhase?: (phase: 'writing' | 'images' | 'typecheck' | 'vite') => void
+  onAsset?: (assetId: string, source: 'provider' | 'cache' | 'dedup') => void
   /** Skipped by default: vite build is the gate that matters for preview. */
   typecheck?: boolean
 }
@@ -77,6 +79,7 @@ export async function buildTask(
 
   const projectDir = workspace.dir
 
+  options.onPhase?.('writing')
   const write = await writeProject(spec, {
     templateDir: resolve(options.templateDir),
     ...(options.adminTemplateDir ? { adminTemplateDir: resolve(options.adminTemplateDir) } : {}),
@@ -84,10 +87,12 @@ export async function buildTask(
     nodeModules: 'link',
   })
 
+  options.onPhase?.('images')
   const images = await generateAssets(spec, {
     provider,
     outDir: projectDir,
     ...(options.onProgress === undefined ? {} : { onProgress: options.onProgress }),
+    ...(options.onAsset === undefined ? {} : { onAsset: options.onAsset }),
     ...(options.cache !== undefined ? { cache: options.cache } : {}),
     ...(options.processor !== undefined ? { processor: options.processor } : {}),
   })
@@ -95,6 +100,7 @@ export async function buildTask(
   await assertExpectedAssetsExist(projectDir, write)
 
   if (spec.experience?.kind === 'admin' || options.typecheck === true) {
+    options.onPhase?.('typecheck')
     await runToolOrThrow('vue-tsc', templateDir, 'node_modules/vue-tsc/bin/vue-tsc.js', [
       '--noEmit',
       '-p',
@@ -102,6 +108,7 @@ export async function buildTask(
     ], projectDir, options.limits)
   }
 
+  options.onPhase?.('vite')
   const build = await runToolOrThrow(
     'vite build',
     templateDir,

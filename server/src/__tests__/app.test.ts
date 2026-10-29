@@ -7,6 +7,7 @@ import { MemoryImageCache } from '@vudt/imagegen'
 import type { ImageProvider } from '@vudt/imagegen'
 import { buildApp } from '../app.js'
 import { TaskObservability } from '../task-observability.js'
+import { createOpenAISpecDrafter } from '@vudt/providers'
 import { MemorySettingsStore } from '../settings-store.js'
 import type { SpecDrafter } from '../spec-source.js'
 import {
@@ -83,6 +84,31 @@ it('serves request snapshots separately from task views and handles legacy tasks
   }
   expect((await harness.app.inject('/tasks/legacy/observability')).json().requests).toEqual([])
   expect((await harness.app.inject('/tasks/missing/observability')).statusCode).toBe(404)
+})
+
+it('exposes the actual pending request over HTTP before a model returns', async () => {
+  let release!: (response: Response) => void
+  let started!: () => void
+  const entered = new Promise<void>(resolve => { started = resolve })
+  const harness = await makeApp({ drafterFactory: (_settings, onRequest) => createOpenAISpecDrafter({
+    apiKey: 'test-key', model: 'test', ...(onRequest ? { onRequest } : {}),
+    fetch: async () => new Promise<Response>(resolve => { release = resolve; started() }),
+  }) })
+  track(harness)
+  const created = await post(harness, 'inventory')
+  await entered
+  const id = created.json().id
+  try {
+    const detail = (await harness.app.inject(`/tasks/${id}/observability`)).json()
+    expect(detail.requests).toHaveLength(1)
+    expect(detail.requests[0]).toMatchObject({ kind: 'structure', status: 'pending', attempt: 1 })
+    expect(detail.requests[0].messages[1].content).toContain('inventory')
+    expect((await harness.app.inject(`/tasks/${id}`)).json().stage).toBe('drafting')
+  } finally { release(new Response('', { status: 403 })) }
+  await harness.app.vudt.queue.drain()
+  const final = (await harness.app.inject(`/tasks/${id}/observability`)).json()
+  expect(final.requests[0].status).toBe('failed')
+  expect(final.events.at(-1)).toMatchObject({ stage: 'drafting', state: 'failed' })
 })
 
 type Harness = Awaited<ReturnType<typeof makeApp>>

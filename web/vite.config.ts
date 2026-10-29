@@ -13,6 +13,7 @@ const API_TARGET = 'http://127.0.0.1:4300'
 export default defineConfig({
   plugins: [vue()],
   resolve: {
+    dedupe: ['vue'],
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
   server: {

@@ -1,5 +1,6 @@
 import { BLOCK_REGISTRY } from '@vudt/blocks'
 import { adminExample } from './admin-example.js'
+import { observeRequest, type RequestObserver } from './request-observer.js'
 
 export interface SpecDraftRequest {
   description: string
@@ -23,6 +24,7 @@ export interface OpenAISpecDrafterOptions {
   baseUrl?: string
   fetch?: typeof fetch
   temperature?: number
+  onRequest?: RequestObserver
   /**
    * Some OpenAI-compatible relays reject `response_format` with a 400. Turning it
    * off is safe: the reply is parsed leniently and falls back to the raw string.
@@ -304,19 +306,21 @@ export function createOpenAISpecDrafter(options: OpenAISpecDrafterOptions): Spec
         messages.push({ role: 'user', content: feedbackPrompt(request.feedback) })
       }
 
+      const body = {
+        model, messages,
+        ...(options.sendResponseFormat === false ? {} : { response_format: { type: 'json_object' } }),
+        ...(options.maxTokens === undefined ? {} : { max_tokens: options.maxTokens }),
+        temperature: options.temperature ?? 0.4,
+      }
+      const finish = observeRequest(options.onRequest, { kind: 'structure', model, attempt: request.attempt, messages, parameters: body }, apiKey)
+      try {
       const response = await fetchImpl(`${baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
           authorization: `Bearer ${apiKey}`,
         },
-        body: JSON.stringify({
-          model,
-          messages,
-          ...(options.sendResponseFormat === false ? {} : { response_format: { type: 'json_object' } }),
-          ...(options.maxTokens === undefined ? {} : { max_tokens: options.maxTokens }),
-          temperature: options.temperature ?? 0.4,
-        }),
+        body: JSON.stringify(body),
       })
 
       if (!response.ok) {
@@ -331,6 +335,7 @@ export function createOpenAISpecDrafter(options: OpenAISpecDrafterOptions): Spec
         throw new Error('spec drafter reply carried no content')
       }
 
+      finish?.('succeeded')
       try {
         return JSON.parse(content)
       } catch {
@@ -347,6 +352,10 @@ export function createOpenAISpecDrafter(options: OpenAISpecDrafterOptions): Spec
           }
         }
         return content
+      }
+      } catch (error) {
+        finish?.('failed')
+        throw error
       }
     },
   }
