@@ -1,0 +1,20 @@
+:root {
+  --admin-bg: #f3f6f8;
+  --admin-surface: #ffffff;
+  --admin-text: #253447;
+  --admin-muted: #64748b;
+  --admin-border: #e2e8ef;
+  --admin-primary: #087f75;
+  --admin-on-primary: #ffffff;
+  --admin-nav: #172c35;
+  --admin-nav-text: #d2dfe4;
+  --admin-overlay: #14273366;
+  font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+  color: var(--admin-text);
+  background: var(--admin-bg);
+  font-size: 14px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input, select { font: inherit; }
+:focus-visible { outline: 2px solid var(--admin-primary); outline-offset: 3px; }

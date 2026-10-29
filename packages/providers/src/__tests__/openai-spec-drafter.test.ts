@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { BLOCK_REGISTRY } from '@vudt/blocks'
-import { PageTypeSchema, StyleBibleSchema, ThemeSchema } from '@vudt/spec'
+import { BLOCK_REGISTRY, deriveSpecInput } from '@vudt/blocks'
+import { ProjectSpecInputSchema, PageTypeSchema, StyleBibleSchema, ThemeSchema } from '@vudt/spec'
 import { createOpenAISpecDrafter } from '../openai-spec-drafter.js'
 
 interface Capture {
@@ -10,6 +10,7 @@ interface Capture {
     model: string
     messages: { role: string; content: string }[]
     response_format?: { type: string }
+    max_tokens?: number
   }
 }
 
@@ -36,7 +37,7 @@ function chatReply(content: string): unknown {
 function drafterWith(
   responseBody: unknown,
   status = 200,
-  extra: { sendResponseFormat?: boolean } = {},
+  extra: { sendResponseFormat?: boolean; maxTokens?: number } = {},
 ) {
   const { calls, fetchImpl } = recordingFetch(responseBody, status)
   const drafter = createOpenAISpecDrafter({
@@ -73,6 +74,29 @@ function schemaEnumValues(): string[] {
 }
 
 describe('createOpenAISpecDrafter', () => {
+  test('includes a complete admin example that derives and validates', async () => {
+    const { drafter, calls } = drafterWith(chatReply('{}'))
+    await drafter.draft({ description: '后台', attempt: 1 })
+    const match = systemOf(calls[0]!).match(/ADMIN_EXAMPLE_BEGIN\n([\s\S]*?)\nADMIN_EXAMPLE_END/)
+    expect(match).not.toBeNull()
+    const derived = deriveSpecInput(JSON.parse(match![1]!))
+    if (!derived.ok) throw new Error(derived.feedback)
+    expect(ProjectSpecInputSchema.safeParse(derived.value).success).toBe(true)
+  })
+  test('teaches explicit admin modes, navigation, forms and controlled icons', async () => {
+    const { drafter, calls } = drafterWith(chatReply('{}'))
+    await drafter.draft({ description: '库存后台', attempt: 1 })
+    const prompt = systemOf(calls[0]!)
+    expect(prompt).toContain('"kind":"admin"')
+    expect(prompt).toContain('"mode":"list"')
+    expect(prompt).toContain('bulk-delete')
+    expect(prompt).toContain('box, grid, users, settings, file, layers, chart, in, out, tool')
+    expect(prompt).toContain('blocks: []')
+    expect(prompt).toContain('settings requires an unbound form')
+    expect(prompt).toContain('form mode requires a collection-bound form')
+    expect(prompt).toContain('at most one illustration panel')
+    expect(prompt).not.toContain('which switches the whole site to the marketing shell')
+  })
   test('returns the parsed JSON object the model emitted', async () => {
     const spec = { meta: { name: 'Acme', description: 'x', targetStack: 'vue3' } }
     const { drafter } = drafterWith(chatReply(JSON.stringify(spec)))
@@ -344,10 +368,8 @@ describe('createOpenAISpecDrafter', () => {
     expect(system).toMatch(/back-office \/ management system|management system \(admin/i)
     expect(system).toMatch(/DataTable/)
     expect(system).toMatch(/restrained/)
-    // The shell is chosen by pageType, not by block — leaving pageType to
-    // inference would let the model build app pages in the marketing shell.
-    expect(system).toMatch(/dashboard.*settings.*list-detail.*form/)
-    expect(system).toMatch(/never\s+["']?landing|not\s+["']?landing/i)
+    expect(system).toContain('"kind":"admin"')
+    expect(system).toContain('pageType mapping:')
   })
 
   test('makes the site form a judgement from the description, not a fixed genre', async () => {
@@ -370,10 +392,10 @@ describe('createOpenAISpecDrafter', () => {
 
     const system = systemOf(calls[0]!)
     // Concrete colour/radius/spacing rules, not just "restrained".
-    expect(system).toMatch(/near-white|#f5f6f8/i)
-    expect(system).toMatch(/never a bright\s+saturated blue/i)
-    expect(system).toMatch(/radius "none" or "sm"|radius "none" \| "sm"/i)
-    expect(system).toMatch(/hairline\s+dividers/i)
+    expect(system).toContain('do not force blue-grey or teal')
+    expect(system).toContain('light or dark palettes')
+    expect(system).toContain('compact density')
+    expect(system).toContain('readable contrasting surfaces')
     // Negative examples — what a console is not.
     expect(system).toMatch(/do not[^.]*(large rounded cards|drop shadows|gradient buttons)/i)
   })
@@ -472,7 +494,7 @@ describe('createOpenAISpecDrafter', () => {
     expect(system).toMatch(/operations/)
     // 老锚点保持通过（块目录、主题规则、页面下限等）
     expect(system).toMatch(/APP blocks \(back-office \/ management systems only\)/i)
-    expect(system).toMatch(/near-white|#f5f6f8/i)
+    expect(system).toContain('do not force blue-grey or teal')
     expect(system).toMatch(/3-6 pages/)
   })
 

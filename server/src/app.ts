@@ -20,6 +20,7 @@ import {
 import type { ProbeReport } from './settings-probe.js'
 import { MemorySettingsStore } from './settings-store.js'
 import { TaskStore, type TaskRecord } from './store.js'
+import { TaskObservability } from './task-observability.js'
 
 /** Structural: both `SettingsStore` and `MemorySettingsStore` satisfy it as-is. */
 export interface SettingsLike {
@@ -30,6 +31,7 @@ export interface SettingsLike {
 
 export interface AppDeps {
   templateDir: string
+  adminTemplateDir?: string
   workspaceRoot: string
   /** Built per task from that task's settings snapshot, so both paths are identical. */
   drafter: (settings: EffectiveSettings['spec']) => SpecDrafter
@@ -66,6 +68,9 @@ export interface TaskView {
   finishedAt?: number
   previewUrl?: string
   specAttempts?: number
+  stage?: TaskRecord['stage']
+  stageStartedAt?: number
+  revision?: number
   providerCalls?: number
   assetsDone?: number
   assetsTotal?: number
@@ -83,6 +88,9 @@ function toView(task: TaskRecord): TaskView {
     ...(task.finishedAt === undefined ? {} : { finishedAt: task.finishedAt }),
     ...(task.previewPath === undefined ? {} : { previewUrl: task.previewPath }),
     ...(task.specAttempts === undefined ? {} : { specAttempts: task.specAttempts }),
+    ...(task.stage === undefined ? {} : { stage: task.stage }),
+    ...(task.stageStartedAt === undefined ? {} : { stageStartedAt: task.stageStartedAt }),
+    ...(task.observability === undefined ? {} : { revision: task.observability.revision }),
     ...(task.providerCalls === undefined ? {} : { providerCalls: task.providerCalls }),
     ...(task.assetsDone === undefined ? {} : { assetsDone: task.assetsDone }),
     ...(task.assetsTotal === undefined ? {} : { assetsTotal: task.assetsTotal }),
@@ -168,6 +176,7 @@ export function buildApp(deps: AppDeps): FastifyInstance & { vudt: AppContext } 
         provider: deps.provider,
         settings,
         templateDir: deps.templateDir,
+        ...(deps.adminTemplateDir ? { adminTemplateDir: deps.adminTemplateDir } : {}),
         maxAssets: deps.maxAssets ?? 24,
         specAttempts: deps.specAttempts ?? 3,
         ...(deps.cache === undefined ? {} : { cache: deps.cache }),
@@ -221,6 +230,13 @@ export function buildApp(deps: AppDeps): FastifyInstance & { vudt: AppContext } 
     const task = store.get(id)
     if (task === undefined) throw new ServerError('unknown task', 404)
     return toView(task)
+  })
+
+  app.get('/tasks/:id/observability', async (request) => {
+    const { id } = request.params as { id: string }
+    const task = store.get(id)
+    if (task === undefined) throw new ServerError('unknown task', 404)
+    return (task.observability ?? new TaskObservability()).snapshot()
   })
 
   // Without this the bare task URL 404s, and `base: './'` makes relative asset

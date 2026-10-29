@@ -83,6 +83,7 @@ async function main(): Promise<void> {
 
   const app = buildApp({
     templateDir: config.templateDir,
+    adminTemplateDir: config.adminTemplateDir,
     workspaceRoot: config.workspaceRoot,
     drafter: buildDrafter(specApiKey),
     provider: buildImageProvider(imageApiKey, process.env),

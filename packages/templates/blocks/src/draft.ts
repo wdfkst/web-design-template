@@ -1,4 +1,6 @@
 import {
+  AdminPageSchema,
+  ExperienceSchema,
   BlockSchema,
   CollectionSchema,
   FormSchema,
@@ -32,7 +34,8 @@ const DraftPageSchema = z.object({
   route: PageSchema.shape.route,
   title: PageSchema.shape.title,
   pageType: PageTypeSchema,
-  blocks: z.array(DraftBlockSchema).min(2),
+  blocks: z.array(DraftBlockSchema),
+  admin: AdminPageSchema.optional(),
   operations: z.array(OperationSchema).default([]),
 })
 
@@ -49,12 +52,17 @@ const DraftPageSchema = z.object({
  * it to force one — is the mistake this split avoids.
  */
 export const ProjectDraftSchema = z.object({
+  experience: ExperienceSchema.optional(),
   meta: MetaSchema,
   theme: ThemeSchema,
   styleBible: StyleBibleSchema,
   collections: z.array(CollectionSchema).default([]),
   forms: z.array(FormSchema).default([]),
   pages: z.array(DraftPageSchema).min(3),
+}).superRefine((draft, ctx) => {
+  if (draft.experience?.kind !== 'admin') draft.pages.forEach((page, index) => {
+    if (page.blocks.length < 2) ctx.addIssue({ code: 'custom', path: ['pages', index, 'blocks'], message: 'legacy draft pages require at least 2 blocks' })
+  })
 })
 
 export type ProjectDraft = z.infer<typeof ProjectDraftSchema>
@@ -105,6 +113,7 @@ export function deriveSpecInput(draft: unknown): DeriveSpecResult {
     return {
       ok: true,
       value: {
+        ...(parsed.data.experience === undefined ? {} : { experience: parsed.data.experience }),
         meta,
         theme,
         styleBible,
@@ -114,6 +123,7 @@ export function deriveSpecInput(draft: unknown): DeriveSpecResult {
         collections,
         forms,
         pages: derivations.map(({ page, derived }) => ({
+          ...(page.admin === undefined ? {} : { admin: page.admin }),
           route: page.route,
           title: page.title,
           pageType: page.pageType,

@@ -3,6 +3,20 @@ import { parseProjectSpecInput } from '@vudt/spec'
 import { deriveSpecInput } from '../draft.js'
 import { HeroSplit } from '../registry.js'
 
+it('preserves admin declarations through asset derivation without requiring display blocks', () => {
+  const result = deriveSpecInput({
+    meta: { name: '后台', description: '商品后台', targetStack: 'vue3' }, theme, styleBible,
+    experience: { kind: 'admin', navigation: [{ id: 'items', label: '商品', route: '/' }] },
+    pages: ['/', '/two', '/three'].map(route => ({ route, title: '商品', pageType: 'dashboard', blocks: [], admin: { mode: 'workbench', collections: ['items'], shortcuts: [] } })),
+  })
+  expect(result.ok).toBe(true)
+  if (result.ok) {
+    expect(result.value).toHaveProperty('experience.kind', 'admin')
+    expect(result.value.pages[0]).toHaveProperty('admin.mode', 'workbench')
+    expect(result.value.assets).toEqual([])
+  }
+})
+
 const theme = {
   colorTokens: {
     primary: '#4f46e5',

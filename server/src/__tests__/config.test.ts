@@ -9,6 +9,8 @@ describe('loadConfig', () => {
     expect(config.port).toBe(4300)
     expect(config.workspaceRoot).toBe(resolve('/srv/app', '.vudt/tasks'))
     expect(config.templateDir).toBe(resolve('/srv/app', 'packages/templates/vue3-base'))
+    expect(config.adminTemplateDir).toBe(resolve('/srv/app', 'packages/templates/vue3-admin'))
+    expect(loadConfig({ VUDT_TEMPLATE_DIR: 'custom/vue3-base' }, '/srv/app').adminTemplateDir).toBe(resolve('/srv/app', 'custom/vue3-admin'))
     expect(config.concurrency).toBe(1)
   })
 

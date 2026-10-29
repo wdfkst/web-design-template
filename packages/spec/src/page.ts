@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { AdminPageSchema } from './admin.js'
 import { OperationSchema } from './operation.js'
 
 export const PageTypeSchema = z.enum([
@@ -24,7 +25,8 @@ export const PageSchema = z.object({
   route: z.string().regex(/^\/[a-z0-9\-/:]*$/, 'must start with / and be lowercase'),
   title: z.string().min(1).max(120),
   pageType: PageTypeSchema,
-  blocks: z.array(BlockSchema).min(1),
+  blocks: z.array(BlockSchema),
+  admin: AdminPageSchema.optional(),
   operations: z.array(OperationSchema).default([]),
 })
 

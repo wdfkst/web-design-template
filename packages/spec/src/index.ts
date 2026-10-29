@@ -1,3 +1,4 @@
+export * from './admin.js'
 export * from './theme.js'
 export * from './style-bible.js'
 export * from './asset.js'

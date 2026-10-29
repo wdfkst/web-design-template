@@ -24,6 +24,7 @@ export interface BuildTaskOptions {
   workspace: TaskWorkspace
   /** `packages/templates/vue3-base`, ideally with a warm node_modules. */
   templateDir: string
+  adminTemplateDir?: string
   provider: ImageProvider
   cache?: ImageCache
   processor?: ImageProcessor
@@ -62,7 +63,9 @@ export async function buildTask(
   options: BuildTaskOptions,
 ): Promise<BuildTaskResult> {
   const started = Date.now()
-  const { workspace, templateDir, provider } = options
+  const { workspace, provider } = options
+  const templateDir = spec.experience?.kind === 'admin' ? options.adminTemplateDir : options.templateDir
+  if (!templateDir) throw new BuildError('adminTemplateDir is required for admin projects')
   const maxAssets = options.maxAssets ?? DEFAULT_MAX_ASSETS
 
   if (spec.assets.length > maxAssets) {
@@ -75,7 +78,8 @@ export async function buildTask(
   const projectDir = workspace.dir
 
   const write = await writeProject(spec, {
-    templateDir: resolve(templateDir),
+    templateDir: resolve(options.templateDir),
+    ...(options.adminTemplateDir ? { adminTemplateDir: resolve(options.adminTemplateDir) } : {}),
     outDir: projectDir,
     nodeModules: 'link',
   })
@@ -90,7 +94,7 @@ export async function buildTask(
 
   await assertExpectedAssetsExist(projectDir, write)
 
-  if (options.typecheck === true) {
+  if (spec.experience?.kind === 'admin' || options.typecheck === true) {
     await runToolOrThrow('vue-tsc', templateDir, 'node_modules/vue-tsc/bin/vue-tsc.js', [
       '--noEmit',
       '-p',

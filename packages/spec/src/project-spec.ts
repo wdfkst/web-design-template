@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ExperienceSchema, checkAdminIntegrity } from './admin.js'
 import { AssetInputSchema, AssetSchema, renderSizeMatchesRatio } from './asset.js'
 import { CollectionSchema } from './collection.js'
 import { FormSchema } from './form.js'
@@ -13,6 +14,7 @@ export const MetaSchema = z.object({
 })
 
 const baseShape = {
+  experience: ExperienceSchema.optional(),
   meta: MetaSchema,
   theme: ThemeSchema,
   styleBible: StyleBibleSchema,
@@ -159,11 +161,13 @@ function checkReferentialIntegrity(spec: Checked, ctx: z.RefinementCtx): void {
 export const ProjectSpecInputSchema = z
   .object({ ...baseShape, assets: z.array(AssetInputSchema) })
   .superRefine(checkReferentialIntegrity)
+  .superRefine(checkAdminIntegrity)
 
 /** After finalizeSpec() has filled in derived hashes. */
 export const ProjectSpecSchema = z
   .object({ ...baseShape, assets: z.array(AssetSchema) })
   .superRefine(checkReferentialIntegrity)
+  .superRefine(checkAdminIntegrity)
 
 export type Meta = z.infer<typeof MetaSchema>
 export type ProjectSpecInput = z.infer<typeof ProjectSpecInputSchema>

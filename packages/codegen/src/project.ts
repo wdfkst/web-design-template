@@ -1,5 +1,6 @@
 import type { ProjectSpec } from '@vudt/spec'
 import { renderApp } from './app.js'
+import { generateAdminProject } from './admin/project.js'
 import { renderCollections } from './data.js'
 import { assetFilePath, pageComponentName } from './naming.js'
 import { renderPage } from './page.js'
@@ -34,6 +35,7 @@ export interface GeneratedProject {
  * project's cross-page structure is written down.
  */
 export function generateProject(spec: ProjectSpec): GeneratedProject {
+  if (spec.experience?.kind === 'admin') return generateAdminProject(spec)
   const files: Record<string, string> = {}
 
   for (const page of spec.pages) {

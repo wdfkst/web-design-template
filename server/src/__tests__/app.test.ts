@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { MemoryImageCache } from '@vudt/imagegen'
 import type { ImageProvider } from '@vudt/imagegen'
 import { buildApp } from '../app.js'
+import { TaskObservability } from '../task-observability.js'
 import { MemorySettingsStore } from '../settings-store.js'
 import type { SpecDrafter } from '../spec-source.js'
 import {
@@ -63,6 +64,26 @@ async function makeApp<D extends SpecDrafter = ScriptedDrafter, P extends ImageP
   })
   return { app, drafter, provider, workspaceRoot }
 }
+
+it('serves request snapshots separately from task views and handles legacy tasks', async () => {
+  const harness = await makeApp()
+  track(harness)
+  const trace = new TaskObservability()
+  trace.startRequest({ kind: 'structure', model: 'test', prompt: 'private prompt text' })
+  harness.app.vudt.store.create({ id: 'trace', ownerId: null, description: 'test', status: 'drafting', createdAt: 0, stage: 'drafting', stageStartedAt: 123, observability: trace })
+  harness.app.vudt.store.create({ id: 'legacy', ownerId: null, description: 'old', status: 'ready', createdAt: 0 })
+  const response = await harness.app.inject('/tasks/trace/observability')
+  expect(response.statusCode).toBe(200)
+  expect((await harness.app.inject('/tasks/trace')).json()).toMatchObject({ stage: 'drafting', stageStartedAt: 123, revision: 1 })
+  expect(response.json().requests[0]).toMatchObject({ status: 'pending', prompt: 'private prompt text' })
+  for (const url of ['/tasks', '/tasks/trace']) {
+    const view = await harness.app.inject(url)
+    expect(view.body).not.toContain('private prompt text')
+    expect(view.body).not.toContain('observability')
+  }
+  expect((await harness.app.inject('/tasks/legacy/observability')).json().requests).toEqual([])
+  expect((await harness.app.inject('/tasks/missing/observability')).statusCode).toBe(404)
+})
 
 type Harness = Awaited<ReturnType<typeof makeApp>>
 

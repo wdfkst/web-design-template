@@ -7,6 +7,7 @@ export interface ServerConfig {
   workspaceRoot: string
   /** `packages/templates/vue3-base`, ideally with a warm node_modules. */
   templateDir: string
+  adminTemplateDir: string
   /** Shared across tasks: the cache key is the content hash, not the task id. */
   imageCacheDir: string
   concurrency: number
@@ -52,6 +53,7 @@ export function loadConfig(
     port: intFromEnv(env, 'VUDT_PORT', DEFAULTS.port),
     workspaceRoot: resolve(cwd, env.VUDT_WORKSPACE_ROOT ?? '.vudt/tasks'),
     templateDir: resolve(cwd, env.VUDT_TEMPLATE_DIR ?? 'packages/templates/vue3-base'),
+    adminTemplateDir: env.VUDT_ADMIN_TEMPLATE_DIR ? resolve(cwd, env.VUDT_ADMIN_TEMPLATE_DIR) : resolve(cwd, env.VUDT_TEMPLATE_DIR ?? 'packages/templates/vue3-base', '../vue3-admin'),
     imageCacheDir: resolve(cwd, env.VUDT_IMAGE_CACHE_DIR ?? '.vudt/image-cache'),
     concurrency: intFromEnv(env, 'VUDT_CONCURRENCY', DEFAULTS.concurrency),
     maxPending: intFromEnv(env, 'VUDT_MAX_PENDING', DEFAULTS.maxPending),

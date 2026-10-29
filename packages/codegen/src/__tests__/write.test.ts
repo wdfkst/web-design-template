@@ -24,6 +24,22 @@ afterAll(async () => {
 })
 
 describe('writeProject', () => {
+  it('requires an explicit admin template and builds the selected admin base', async () => {
+    const spec = landingSpec()
+    spec.experience = { kind: 'admin', navigation: [{ id: 'home', label: '首页', route: '/' }] }
+    spec.pages = [{ ...spec.pages[0]!, blocks: [], admin: { mode: 'workbench', collections: [], shortcuts: [] } }]
+    spec.assets = []
+    const target = await mkdtemp(join(tmpdir(), 'vudt-admin-'))
+    const adminTemplateDir = resolve(TEMPLATE_DIR, '../vue3-admin')
+    try {
+      await expect(writeProject(spec, { templateDir: TEMPLATE_DIR, outDir: target })).rejects.toThrow(/adminTemplateDir/)
+      await writeProject(spec, { templateDir: TEMPLATE_DIR, adminTemplateDir, outDir: target, nodeModules: 'link' })
+      expect(await readFile(join(target, 'src/App.vue'), 'utf8')).toContain('ConfigProvider')
+      await expect(readdir(join(target, 'src/__tests__'))).rejects.toThrow()
+      await run('node', [resolve(adminTemplateDir, 'node_modules/vue-tsc/bin/vue-tsc.js'), '--noEmit', '-p', join(target, 'tsconfig.json')]).catch(error => { throw new Error(`${error.message}\n${error.stdout}\n${error.stderr}`) })
+      await run('node', [resolve(adminTemplateDir, 'node_modules/vite/bin/vite.js'), 'build', '--logLevel', 'warn'], { cwd: target })
+    } finally { await rm(target, { recursive: true, force: true }) }
+  }, 180_000)
   it('copies the template build config verbatim', async () => {
     const [ours, theirs] = await Promise.all([
       readFile(join(outDir, 'vite.config.ts'), 'utf8'),

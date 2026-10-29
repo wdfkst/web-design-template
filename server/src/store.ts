@@ -1,5 +1,6 @@
 import type { ProjectSpec } from '@vudt/spec'
 import type { EffectiveSettings } from './settings.js'
+import type { TaskObservability, TaskStage } from './task-observability.js'
 
 export type TaskStatus = 'queued' | 'drafting' | 'building' | 'ready' | 'failed'
 
@@ -23,6 +24,9 @@ export interface TaskRecord {
   /** 本次任务的条目总数（= spec.assets.length）；同上。 */
   assetsTotal?: number
   specAttempts?: number
+  stage?: TaskStage
+  stageStartedAt?: number
+  observability?: TaskObservability
   /**
    * The settings this task was created with. Copied at creation so changing
    * settings never rewrites what a queued or running task is doing.

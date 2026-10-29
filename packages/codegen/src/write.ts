@@ -8,6 +8,7 @@ import { generateProject, type GeneratedProject } from './project.js'
 export interface WriteOptions {
   /** Path to `packages/templates/vue3-base` (or a prebuilt copy with node_modules). */
   templateDir: string
+  adminTemplateDir?: string
   /** Empty or non-existent directory to materialize the project into. */
   outDir: string
   /**
@@ -50,7 +51,9 @@ export async function writeProject(
   spec: ProjectSpec,
   options: WriteOptions,
 ): Promise<WriteResult> {
-  const { templateDir, outDir, nodeModules = 'skip' } = options
+  const { outDir, nodeModules = 'skip' } = options
+  const templateDir = spec.experience?.kind === 'admin' ? options.adminTemplateDir : options.templateDir
+  if (!templateDir) throw new CodegenError('adminTemplateDir is required for admin projects')
 
   const generated = generateProject(spec)
 
@@ -98,6 +101,7 @@ async function copyTemplate(
     await cp(join(templateDir, entry.name), join(outDir, entry.name), {
       recursive: true,
       dereference: false,
+      filter: source => !source.split(/[\\/]/).includes('__tests__'),
     })
   }
 }

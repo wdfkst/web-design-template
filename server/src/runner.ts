@@ -15,6 +15,7 @@ export interface RunnerDeps {
   cache?: ImageCache
   processor?: ImageProcessor
   templateDir: string
+  adminTemplateDir?: string
   maxAssets: number
   specAttempts: number
   limits?: BuildLimits
@@ -65,6 +66,7 @@ export async function runTask(taskId: string, deps: RunnerDeps): Promise<void> {
     const result = await buildTask(spec, {
       workspace,
       templateDir: deps.templateDir,
+      ...(deps.adminTemplateDir ? { adminTemplateDir: deps.adminTemplateDir } : {}),
       provider: deps.provider(settings.image),
       maxAssets: deps.maxAssets,
       onProgress: ({ done, total }) => {

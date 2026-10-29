@@ -1,0 +1,38 @@
+import { describe, expect, it } from 'vitest'
+import { mount } from '@vue/test-utils'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import AdminLayout from '../layouts/AdminLayout.vue'
+
+async function render(path = '/') {
+  const router = createRouter({ history: createMemoryHistory(), routes: [
+    { path: '/', component: { template: '<p>商品内容</p>' }, meta: { title: '商品管理' } },
+    { path: '/login', component: { template: '<p>登录内容</p>' }, meta: { title: '登录', chrome: false } },
+  ] })
+  await router.push(path)
+  await router.isReady()
+  return mount(AdminLayout, { props: { brand: '仓库后台', navigation: [{ id: 'items', label: '商品管理', route: '/' }] }, global: { plugins: [router] } })
+}
+
+describe('admin layout', () => {
+  it('renders the business navigation and current title without fake controls', async () => {
+    const wrapper = await render()
+    expect(wrapper.text()).toContain('商品管理')
+    expect(wrapper.find('nav a').attributes('aria-current')).toBe('page')
+    expect(wrapper.text()).not.toContain('管理员')
+    await wrapper.get('button[aria-label="折叠菜单"]').trigger('click')
+    expect(wrapper.classes()).toContain('is-collapsed')
+  })
+  it('opens and closes mobile navigation', async () => {
+    const wrapper = await render()
+    const button = wrapper.get('button[aria-label="打开导航"]')
+    await button.trigger('click')
+    expect(button.attributes('aria-expanded')).toBe('true')
+    await wrapper.get('button[aria-label="关闭导航"]').trigger('click')
+    expect(button.attributes('aria-expanded')).toBe('false')
+  })
+  it('renders auth pages without chrome', async () => {
+    const wrapper = await render('/login')
+    expect(wrapper.find('aside').exists()).toBe(false)
+    expect(wrapper.find('header').exists()).toBe(false)
+  })
+})

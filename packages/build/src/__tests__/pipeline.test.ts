@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, readdir, rm, stat } from 'node:fs/promises'
+import { cp, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import {
@@ -43,6 +43,33 @@ afterAll(async () => {
 })
 
 describe('buildTask', () => {
+  it('rejects admin type errors even when typecheck is disabled and never runs vite', async () => {
+    const spec = landingSpec()
+    spec.experience = { kind: 'admin', navigation: [{ id: 'home', label: '首页', route: '/' }] }
+    spec.pages = [{ ...spec.pages[0]!, blocks: [], admin: { mode: 'workbench', collections: [], shortcuts: [] } }]
+    spec.assets = []
+    const original = resolve(TEMPLATE_DIR, '../vue3-admin')
+    const template = await mkdtemp(join(tmpdir(), 'admin-broken-template-'))
+    const workspace = await root.allocate('admin-type-error')
+    try {
+      await cp(original, template, { recursive: true, filter: source => !['node_modules', 'dist', '__tests__'].some(part => source.split(/[\\/]/).includes(part)) })
+      await symlink(join(original, 'node_modules'), join(template, 'node_modules'), 'junction')
+      await writeFile(join(template, 'src/broken.ts'), 'export const broken: number = "not a number"')
+      await expect(buildTask(spec, { workspace, templateDir: TEMPLATE_DIR, adminTemplateDir: template, typecheck: false, provider: new PngProvider() })).rejects.toThrow(/vue-tsc failed/)
+      await expect(stat(join(workspace.dir, 'dist'))).rejects.toThrow()
+    } finally { await rm(template, { recursive: true, force: true }) }
+  }, 180_000)
+  it('builds the admin template with no image calls', async () => {
+    const spec = landingSpec()
+    spec.experience = { kind: 'admin', navigation: [{ id: 'home', label: '首页', route: '/' }] }
+    spec.pages = [{ ...spec.pages[0]!, blocks: [], admin: { mode: 'workbench', collections: [], shortcuts: [] } }]
+    spec.assets = []
+    const provider = new PngProvider()
+    const result = await buildTask(spec, { workspace: await root.allocate('admin-happy'), templateDir: TEMPLATE_DIR, adminTemplateDir: resolve(TEMPLATE_DIR, '../vue3-admin'), typecheck: false, provider })
+    expect(result.build.code).toBe(0)
+    expect(provider.requests).toHaveLength(0)
+    expect(await readFile(join(result.projectDir, 'src/App.vue'), 'utf8')).toContain('ConfigProvider')
+  }, 180_000)
   it('runs code -> images -> build and produces a servable dist', async () => {
     const ws = await root.allocate('task-happy')
     const provider = new PngProvider()
