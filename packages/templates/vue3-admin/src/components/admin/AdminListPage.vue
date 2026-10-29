@@ -12,7 +12,9 @@ import AdminEmptyState, { type EmptyPanel } from './AdminEmptyState.vue'
 import AdminFilterBar from './AdminFilterBar.vue'
 import AdminRecordDrawer from './AdminRecordDrawer.vue'
 interface Action { kind: string; label: string; route?: string; field?: string; value?: unknown }
-interface ListConfig { collection: string; form?: string; filters: string[]; columns: { field: string; format?: string }[]; actions: Action[] }
+import AdminRecordCards from './AdminRecordCards.vue'
+import type { AdminListConfig } from '../../data/admin-config'
+type ListConfig = Omit<AdminListConfig, 'mode'> & { mode?: 'list' }
 const props = defineProps<{ title: string; config: ListConfig; emptyPanel?: EmptyPanel }>()
 const router = useRouter()
 const collection = collections.find(item => item.id === props.config.collection)!
@@ -22,6 +24,12 @@ const { draft, page, pageSize, selected, filtered, visible, query, reset } = use
 const drawerOpen = ref(false), editing = ref<Row>()
 const rowActions = computed(() => props.config.actions.filter(a => !['create', 'bulk-delete'].includes(a.kind)))
 const columns = computed(() => [...props.config.columns.map(column => ({ title: collection.model[column.field].label, dataIndex: column.field, key: column.field, format: column.format })), ...(rowActions.value.length ? [{ title: '操作', key: '__actions', dataIndex: '__actions', format: '' }] : [])])
+function toggle(id: string | number) { selected.value = selected.value.includes(id) ? selected.value.filter(key => key !== id) : [...selected.value, id] }
+function cardAction(event: { id: string | number; actionIndex: number }) {
+  const row = visible.value.find(item => item.id === event.id)
+  const action = rowActions.value[event.actionIndex]
+  if (row && action) act(action, row)
+}
 function open(record?: Row) { editing.value = record; drawerOpen.value = true }
 function save(values: Record<string, unknown>) {
   try {
@@ -50,7 +58,11 @@ function act(action: Action, record: Record<string, unknown>) {
     <section class="list-panel"><div class="list-toolbar"><Space><strong>{{ collection.label }}</strong><span class="muted">共 {{ filtered.length }} 条</span><Tag v-if="selected.length">已选 {{ selected.length }} 项</Tag></Space><Space>
       <template v-for="action in config.actions" :key="action.kind"><Button v-if="action.kind === 'create'" type="primary" @click="open()">{{ action.label }}</Button><Button v-else-if="action.kind === 'bulk-delete'" danger :disabled="!selected.length" @click="remove(selected)">{{ action.label }}</Button></template>
     </Space></div>
-    <Table :columns="columns" :data-source="visible" row-key="id" :pagination="false" :scroll="{ x: 'max-content' }" size="middle" :row-selection="config.actions.some(a => a.kind === 'bulk-delete') ? { selectedRowKeys: selected, onChange: (keys: (string | number)[]) => selected = keys } : undefined">
+    <template v-if="config.variant === 'cards' && config.card">
+      <AdminRecordCards v-if="visible.length" :rows="visible" :title-field="config.card.titleField" :summary-fields="config.card.summaryFields" :selected-ids="selected" :selectable="config.actions.some(a => a.kind === 'bulk-delete')" :model="collection.model" :actions="rowActions" @toggle="toggle" @action="cardAction" />
+      <AdminEmptyState v-else :panel="emptyPanel" description="没有符合条件的记录"><Button @click="reset">清除筛选</Button></AdminEmptyState>
+    </template>
+    <Table v-else :columns="columns" :data-source="visible" row-key="id" :pagination="false" :scroll="{ x: 'max-content' }" size="middle" :row-selection="config.actions.some(a => a.kind === 'bulk-delete') ? { selectedRowKeys: selected, onChange: (keys: (string | number)[]) => selected = keys } : undefined">
       <template #bodyCell="{ column, record, text }"><Space v-if="column.key === '__actions'"><Button v-for="action in rowActions" :key="action.label" type="link" size="small" :danger="action.kind === 'delete'" @click="act(action, record)">{{ action.label }}</Button></Space><Tag v-else-if="config.columns.find(c => c.field === column.key)?.format === 'status'">{{ display(text) }}</Tag><span v-else>{{ display(text, config.columns.find(c => c.field === column.key)?.format) }}</span></template>
       <template #emptyText><AdminEmptyState :panel="emptyPanel" description="没有符合条件的记录"><Button @click="reset">清除筛选</Button></AdminEmptyState></template>
     </Table>

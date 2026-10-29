@@ -16,7 +16,8 @@ export function generateAdminProject(spec: ProjectSpec): GeneratedProject {
     if (names.has(name.toLowerCase())) throw new Error(`Admin module collision: ${page.route}`)
     names.add(name.toLowerCase())
     files[`src/modules/${name}/index.vue`] = renderAdminPage(spec, page)
-    files[`src/modules/${name}/config.ts`] = `export const pageProps = ${adminLiteral(adminPageProps(spec, page))}\n`
+    const listType = page.admin?.mode === 'list'
+    files[`src/modules/${name}/config.ts`] = `${listType ? "import type { AdminListConfig } from '../../data/admin-config'\n" : ''}export const pageProps = ${adminLiteral(adminPageProps(spec, page))}${listType ? ' satisfies { title: string; config: AdminListConfig; emptyPanel?: unknown }' : ''}\n`
   }
   const nav = renderAdminNavigation(spec)
   files['src/router.ts'] = nav.router
