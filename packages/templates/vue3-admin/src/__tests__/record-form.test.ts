@@ -30,6 +30,13 @@ it('renders every grouped field once with its validation error', () => {
     expect(values).toEqual({ name: '', price: -1, email: 'invalid' })
   } finally { wrapper.unmount() }
 })
+it('focuses the first invalid field after validation', async () => {
+  const wrapper = mount(AdminRecordFields, { attachTo: document.body, props: { form, values: {}, errors: {} } })
+  try {
+    await wrapper.setProps({ errors: { name: '请填写名称', price: '请填写价格' } })
+    expect(document.activeElement).toBe(wrapper.get('#field-item-name').element)
+  } finally { wrapper.unmount() }
+})
 it('rejects missing and non-finite numbers', () => {
   expect(validateRecord(form, { name: '商品', price: Number.NaN })).toHaveProperty('price')
   expect(validateRecord(form, { name: '商品', price: undefined })).toHaveProperty('price')

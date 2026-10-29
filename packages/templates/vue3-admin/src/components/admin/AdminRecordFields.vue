@@ -2,9 +2,13 @@
 import { FormItem, Input, InputNumber, Select, Switch } from 'ant-design-vue'
 import type { CollectionDefinition, FormDefinition } from '../../data/types'
 import type { FieldGroup } from '../../data/admin-config'
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 const props = defineProps<{ form: FormDefinition; collection?: CollectionDefinition; values: Record<string, any>; errors: Record<string, string>; editing?: boolean; groups?: FieldGroup[] }>()
 const sections = computed(() => props.groups?.map(group => ({ ...group, items: props.form.fields.filter(field => group.fields.includes(field.key)) })) ?? [{ id: '__all', title: '', items: props.form.fields }])
+watch(() => props.errors, errors => {
+  const field = sections.value.flatMap(section => section.items).find(field => errors[field.key] && !(props.editing && field.key === 'id'))
+  if (field) document.getElementById(`field-${props.form.id}-${field.key}`)?.focus()
+}, { flush: 'post' })
 </script>
 <template>
   <fieldset v-for="section in sections" :key="section.id" :class="{ grouped: groups }">
