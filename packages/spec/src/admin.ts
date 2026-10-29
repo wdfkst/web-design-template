@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import type { Collection } from './collection.js'
 import type { Form } from './form.js'
+import { AdminPresentationSchema } from './admin-presentation.js'
+import { WorkbenchPageSchema, checkWorkbenchIntegrity } from './admin-workbench.js'
 
 const id = z.string().regex(/^[a-z][a-z0-9-]*$/)
 const route = z.string().regex(/^\/[a-z0-9\-/:]*$/)
@@ -9,6 +11,7 @@ const navBase = { id, label: z.string().min(1).max(80), icon: AdminIconSchema.op
 const leaf = z.object({ ...navBase, route }).strict()
 export const AdminExperienceSchema = z.object({
   kind: z.literal('admin'),
+  presentation: AdminPresentationSchema.optional(),
   navigation: z.array(z.union([leaf, z.object({ ...navBase, children: z.array(leaf).min(1) }).strict()])).min(1),
 }).strict()
 export const ExperienceSchema = z.discriminatedUnion('kind', [
@@ -23,13 +26,14 @@ export const AdminActionSchema = z.discriminatedUnion('kind', [
   z.object({ ...actionBase, kind: z.literal('detail'), route }).strict(),
   z.object({ ...actionBase, kind: z.literal('set-field'), field: z.string().min(1), value: z.union([z.string(), z.number(), z.boolean()]) }).strict(),
 ])
+const groups = z.array(z.object({ id, title: z.string().min(1).max(80), fields: z.array(z.string().min(1)).min(1) }).strict()).min(1)
 export const AdminPageSchema = z.discriminatedUnion('mode', [
-  z.object({ mode: z.literal('list'), collection: id, form: id.optional(), filters: z.array(z.string()).default([]), columns: z.array(z.object({ field: z.string(), format: z.enum(['text', 'currency', 'date', 'status']).optional() }).strict()).min(1), actions: z.array(AdminActionSchema).default([]) }).strict(),
-  z.object({ mode: z.literal('detail'), collection: id, returnRoute: route }).strict(),
-  z.object({ mode: z.literal('form'), form: id, returnRoute: route }).strict(),
+  z.object({ mode: z.literal('list'), variant: z.enum(['table', 'cards']).optional(), card: z.object({ titleField: z.string().min(1), summaryFields: z.array(z.string().min(1)) }).strict().optional(), collection: id, form: id.optional(), filters: z.array(z.string()).default([]), columns: z.array(z.object({ field: z.string(), format: z.enum(['text', 'currency', 'date', 'status']).optional() }).strict()).min(1), actions: z.array(AdminActionSchema).default([]) }).strict(),
+  z.object({ mode: z.literal('detail'), collection: id, returnRoute: route, variant: z.enum(['sections', 'aside']).optional(), groups: groups.optional(), asideFields: z.array(z.string().min(1)).min(1).optional() }).strict(),
+  z.object({ mode: z.literal('form'), form: id, returnRoute: route, variant: z.enum(['single', 'grouped']).optional(), groups: groups.optional() }).strict(),
   z.object({ mode: z.literal('settings'), form: id, returnRoute: route }).strict(),
-  z.object({ mode: z.literal('workbench'), collections: z.array(id).min(1), shortcuts: z.array(route).default([]) }).strict(),
-])
+  WorkbenchPageSchema,
+]).transform(config => config.mode === 'workbench' && !config.modules ? { ...config, shortcuts: config.shortcuts ?? [] } : config)
 export type AdminPage = z.infer<typeof AdminPageSchema>
 export type AdminExperience = z.infer<typeof AdminExperienceSchema>
 
@@ -83,7 +87,7 @@ export function checkAdminIntegrity(spec: Checked, ctx: z.RefinementCtx): void {
     if (page.pageType !== types[config.mode]) issue([...path, 'pageType'], 'page type does not match admin mode')
     if ('returnRoute' in config && !routes.has(config.returnRoute)) issue(path, 'unknown return route')
     if (config.mode === 'workbench') {
-      if (config.collections.some(c => !collections.has(c)) || config.shortcuts.some(r => !routes.has(r))) issue(path, 'unknown workbench collection or route')
+      checkWorkbenchIntegrity(config, collections, routes, ctx, [...path, 'admin'])
       return
     }
     if (config.mode === 'form' || config.mode === 'settings') {
@@ -91,11 +95,29 @@ export function checkAdminIntegrity(spec: Checked, ctx: z.RefinementCtx): void {
       if (!form) issue(path, 'unknown form')
       else if (config.mode === 'form' && !form.collection) issue(path, 'record form requires a bound collection')
       else if (config.mode === 'settings' && form.collection) issue(path, 'settings requires an unbound form')
+      if (config.mode === 'form') {
+        if (config.variant === 'grouped' ? !config.groups : config.groups !== undefined) issue(path, 'grouped forms require groups; single forms forbid groups')
+        if (config.groups && form) {
+          const keys = config.groups.flatMap(group => group.fields)
+          if (new Set(config.groups.map(g => g.id)).size !== config.groups.length || new Set(keys).size !== keys.length || keys.length !== form.fields.length || keys.some(key => !form.fields.some(field => field.key === key))) issue(path, 'form groups must cover each field exactly once with unique group ids')
+        }
+      }
       return
     }
     const collection = collections.get(config.collection)
     if (!collection) { issue(path, 'unknown collection'); return }
-    if (config.mode === 'detail') return
+    if (config.mode === 'detail') {
+      if (config.variant === 'aside' ? !config.asideFields : config.asideFields !== undefined) issue(path, 'aside variant requires aside fields; sections forbids aside fields')
+      const keys = config.groups?.flatMap(group => group.fields) ?? []
+      if (new Set(keys).size !== keys.length || new Set(config.groups?.map(g => g.id)).size !== (config.groups?.length ?? 0)) issue(path, 'duplicate detail group or field')
+      if ([...keys, ...(config.asideFields ?? [])].some(key => !Object.hasOwn(collection.model, key)) || new Set(config.asideFields).size !== (config.asideFields?.length ?? 0)) issue(path, 'unknown or duplicate detail field')
+      return
+    }
+    if (config.variant === 'cards' ? !config.card : config.card !== undefined) issue(path, 'cards variant requires card configuration; table forbids it')
+    if (config.card) {
+      if (!['string', 'enum'].includes(collection.model[config.card.titleField]?.type ?? '')) issue(path, 'card title requires string or enum field')
+      if (config.card.summaryFields.some(key => !Object.hasOwn(collection.model, key)) || new Set(config.card.summaryFields).size !== config.card.summaryFields.length) issue(path, 'unknown or duplicate card summary field')
+    }
     for (const field of [...config.filters, ...config.columns.map(c => c.field)]) {
       if (!Object.hasOwn(collection.model, field)) issue(path, `unknown collection field "${field}"`)
     }
