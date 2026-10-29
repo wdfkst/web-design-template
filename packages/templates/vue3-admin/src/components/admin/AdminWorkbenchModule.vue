@@ -10,7 +10,7 @@ const router = useRouter()
 </script>
 <template>
   <section class="workbench-module" :data-module="module.id">
-    <header><AdminIcon :name="module.kind === 'records' ? 'document' : module.kind === 'shortcuts' ? 'app' : 'dashboard'" /><h2>{{ module.title }}</h2></header>
+    <header><AdminIcon :name="module.kind === 'records' ? 'document' : module.kind === 'shortcuts' ? 'grid' : 'chart'" /><h2>{{ module.title }}</h2></header>
     <template v-if="result.kind === 'summary'"><p class="summary-value">{{ result.value === null ? '数值超出范围' : formatAdminValue(result.value) }}</p><p class="module-note">当前集合统计</p></template>
     <dl v-else-if="result.kind === 'breakdown'" class="breakdown"><div v-for="item in result.items" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.count }} 条</dd></div><p v-if="!result.items.length">暂无分类数据</p></dl>
     <template v-else-if="result.kind === 'records' && module.kind === 'records'">
