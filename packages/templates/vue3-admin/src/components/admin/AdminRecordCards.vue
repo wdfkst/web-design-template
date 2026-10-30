@@ -10,8 +10,8 @@ const emit = defineEmits<{ toggle: [id: string | number]; action: [value: { id: 
 </script>
 <template>
   <div class="record-cards">
-    <article v-for="row in rows" :key="row.id" data-record-card :class="{ 'jelly-card': presentation?.appearance === 'jelly', 'has-cover': coverField || presentation?.appearance === 'jelly' }">
-      <AdminCardCover v-if="coverField || presentation?.appearance === 'jelly'" :src="coverField ? row[coverField] : undefined" :title="formatAdminValue(row[titleField])" :motif="presentation?.motif" :decorative="presentation?.appearance === 'jelly' && presentation.decoration !== 'minimal'" />
+    <article v-for="row in rows" :key="row.id" data-record-card :class="{ 'jelly-card': presentation?.appearance === 'jelly', 'has-cover': coverField || (presentation?.appearance === 'jelly' && presentation.decoration !== 'minimal') }">
+      <AdminCardCover v-if="coverField || (presentation?.appearance === 'jelly' && presentation.decoration !== 'minimal')" :src="coverField ? row[coverField] : undefined" :title="formatAdminValue(row[titleField])" :motif="presentation?.motif" :decorative="presentation?.appearance === 'jelly' && presentation.decoration !== 'minimal'" />
       <header><span class="record-symbol"><AdminIcon name="document" /></span><h2>{{ formatAdminValue(row[titleField]) }}</h2><Checkbox v-if="selectable" :checked="selectedIds.includes(row.id)" :aria-label="'选择 ' + formatAdminValue(row[titleField])" @change="emit('toggle', row.id)" /></header>
       <dl><div v-for="field in summaryFields" :key="field"><dt>{{ model[field]?.label ?? field }}</dt><dd>{{ formatAdminValue(row[field]) }}</dd></div></dl>
       <Space wrap><Button v-for="(action, actionIndex) in actions" :key="actionIndex" :danger="action.kind === 'delete'" size="small" @click="emit('action', { id: row.id, actionIndex })">{{ action.label }}</Button></Space>

@@ -26,6 +26,18 @@ it('falls back without a request and retries a changed image', async () => {
   expect(wrapper.text()).toContain('暂无封面')
   wrapper.unmount()
 })
+it('omits unconfigured minimal covers but preserves configured business images', async () => {
+  const wrapper = mount(AdminRecordCards, { props: { presentation: { appearance: 'jelly', decoration: 'minimal', shell: 'sidebar' }, rows: [{ id: 1, name: '素材', cover: './covers/sample.svg' }], titleField: 'name', summaryFields: [], selectedIds: [], selectable: false, model: {}, actions: [] } })
+  expect(wrapper.find('.card-cover').exists()).toBe(false)
+  expect(wrapper.get('article').classes()).not.toContain('has-cover')
+  await wrapper.setProps({ coverField: 'cover' })
+  expect(wrapper.get('img').attributes('src')).toBe('./covers/sample.svg')
+  expect(wrapper.get('article').classes()).toContain('has-cover')
+  await wrapper.get('img').trigger('error')
+  expect(wrapper.text()).toContain('暂无封面')
+  expect(wrapper.find('[data-motif]').exists()).toBe(false)
+  wrapper.unmount()
+})
 it('adds default jelly covers but leaves legacy cards unchanged', async () => {
   const wrapper = mount(AdminRecordCards, { props: { rows: [{ id: 1, name: '素材' }], titleField: 'name', summaryFields: [], selectedIds: [], selectable: false, model: {}, actions: [{ kind: 'detail', label: '详情' }] } })
   expect(wrapper.find('.card-cover').exists()).toBe(false)
