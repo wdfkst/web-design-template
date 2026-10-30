@@ -51,6 +51,34 @@ describe('personalized admin contract', () => {
     expect(result.experience).toHaveProperty('presentation.appearance', 'soft-glass')
     expect(result.experience).not.toHaveProperty('presentation.density')
   })
+  it.each(['spark', 'bloom', 'orbit', 'toolkit'])('accepts jelly motif %s', motif => {
+    const source = input(list)
+    const result = ProjectSpecInputSchema.parse({ ...source, experience: { ...source.experience, presentation: { appearance: 'jelly', motif } } })
+    expect(result.experience).toHaveProperty('presentation.motif', motif)
+  })
+  it('does not inject an omitted jelly motif', () => {
+    const source = input(list)
+    const result = ProjectSpecInputSchema.parse({ ...source, experience: { ...source.experience, presentation: { appearance: 'jelly' } } })
+    expect(result.experience).not.toHaveProperty('presentation.motif')
+  })
+  it.each(['plain', 'soft-glass'])('rejects motifs on %s', appearance => {
+    const source = input(list)
+    expect(ProjectSpecInputSchema.safeParse({ ...source, experience: { ...source.experience, presentation: { appearance, motif: 'spark' } } }).success).toBe(false)
+  })
+  it('preserves a string card cover field', () => {
+    const result = ProjectSpecInputSchema.parse(input({ ...list, variant: 'cards', card: { titleField: 'name', summaryFields: [], coverField: 'name' } }))
+    expect(result.pages[0]!.admin).toHaveProperty('card.coverField', 'name')
+  })
+  it.each(['amount', 'state', 'missing'])('rejects non-string or unknown cover field %s', coverField => {
+    expect(parse({ ...list, variant: 'cards', card: { titleField: 'name', summaryFields: [], coverField } }).success).toBe(false)
+  })
+  it.each([undefined, 'table'])('rejects covers without cards variant %s', variant => {
+    expect(parse({ ...list, variant, card: { titleField: 'name', summaryFields: [], coverField: 'name' } }).success).toBe(false)
+  })
+  it('rejects admin configuration on marketing experiences', () => {
+    const source = input(list)
+    expect(ProjectSpecInputSchema.safeParse({ ...source, experience: { kind: 'marketing', presentation: { appearance: 'jelly' } } }).success).toBe(false)
+  })
   it('accepts cards, aside details and complete form grouping', () => {
     expect(parse({ ...list, variant: 'cards', card: { titleField: 'name', summaryFields: ['amount'] } }).success).toBe(true)
     expect(parse({ mode: 'detail', collection: 'items', returnRoute: '/', variant: 'aside', asideFields: ['state'] }).success).toBe(true)

@@ -1,5 +1,6 @@
 export interface AdminPresentation {
-  appearance: 'plain' | 'soft-glass'
+  appearance: 'plain' | 'soft-glass' | 'jelly'
+  motif?: 'spark' | 'bloom' | 'orbit' | 'toolkit'
   decoration: 'minimal' | 'balanced'
   density?: 'compact' | 'comfortable'
   shell: 'sidebar' | 'topbar'
@@ -24,7 +25,7 @@ export type AdminAction = { label: string } & (
 export interface AdminListConfig {
   mode: 'list'; collection: string; form?: string
   filters: string[]; columns: { field: string; format?: 'text' | 'currency' | 'date' | 'status' }[]; actions: AdminAction[]
-  variant?: 'table' | 'cards'; card?: { titleField: string; summaryFields: string[] }
+  variant?: 'table' | 'cards'; card?: { titleField: string; summaryFields: string[]; coverField?: string }
 }
 export interface AdminDetailConfig {
   mode: 'detail'; collection: string; returnRoute: string

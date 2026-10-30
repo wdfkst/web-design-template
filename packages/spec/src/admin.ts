@@ -28,7 +28,7 @@ export const AdminActionSchema = z.discriminatedUnion('kind', [
 ])
 const groups = z.array(z.object({ id, title: z.string().min(1).max(80), fields: z.array(z.string().min(1)).min(1) }).strict()).min(1)
 export const AdminPageSchema = z.discriminatedUnion('mode', [
-  z.object({ mode: z.literal('list'), variant: z.enum(['table', 'cards']).optional(), card: z.object({ titleField: z.string().min(1), summaryFields: z.array(z.string().min(1)) }).strict().optional(), collection: id, form: id.optional(), filters: z.array(z.string()).default([]), columns: z.array(z.object({ field: z.string(), format: z.enum(['text', 'currency', 'date', 'status']).optional() }).strict()).min(1), actions: z.array(AdminActionSchema).default([]) }).strict(),
+  z.object({ mode: z.literal('list'), variant: z.enum(['table', 'cards']).optional(), card: z.object({ titleField: z.string().min(1), summaryFields: z.array(z.string().min(1)), coverField: z.string().min(1).optional() }).strict().optional(), collection: id, form: id.optional(), filters: z.array(z.string()).default([]), columns: z.array(z.object({ field: z.string(), format: z.enum(['text', 'currency', 'date', 'status']).optional() }).strict()).min(1), actions: z.array(AdminActionSchema).default([]) }).strict(),
   z.object({ mode: z.literal('detail'), collection: id, returnRoute: route, variant: z.enum(['sections', 'aside']).optional(), groups: groups.optional(), asideFields: z.array(z.string().min(1)).min(1).optional() }).strict(),
   z.object({ mode: z.literal('form'), form: id, returnRoute: route, variant: z.enum(['single', 'grouped']).optional(), groups: groups.optional() }).strict(),
   z.object({ mode: z.literal('settings'), form: id, returnRoute: route }).strict(),
@@ -119,6 +119,7 @@ export function checkAdminIntegrity(spec: Checked, ctx: z.RefinementCtx): void {
     if (config.card) {
       if (!['string', 'enum'].includes(collection.model[config.card.titleField]?.type ?? '')) issue(path, 'card title requires string or enum field')
       if (config.card.summaryFields.some(key => !Object.hasOwn(collection.model, key)) || new Set(config.card.summaryFields).size !== config.card.summaryFields.length) issue(path, 'unknown or duplicate card summary field')
+      if (config.card.coverField !== undefined && collection.model[config.card.coverField]?.type !== 'string') issue(path, 'card cover requires a string field')
     }
     for (const field of [...config.filters, ...config.columns.map(c => c.field)]) {
       if (!Object.hasOwn(collection.model, field)) issue(path, `unknown collection field "${field}"`)
