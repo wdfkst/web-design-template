@@ -42,8 +42,8 @@ const chromeless = computed(() => route.meta.chrome === false)
             <RouterLink v-else :to="item.route!" :aria-current="route.path === item.route ? 'page' : undefined"><AdminIcon :name="item.icon" /> {{ item.label }}</RouterLink>
           </template>
         </nav>
-        <button v-if="presentation?.shell !== 'topbar'" class="desktop-toggle" aria-label="折叠菜单" :aria-expanded="!collapsed" @click="collapsed = !collapsed">☰</button>
-        <button class="mobile-toggle" aria-label="打开导航" :aria-expanded="mobileOpen" @click="mobileOpen = !mobileOpen">☰</button>
+        <button v-if="presentation?.shell !== 'topbar'" class="desktop-toggle" aria-label="折叠菜单" :aria-expanded="!collapsed" @click="collapsed = !collapsed"><AdminIcon :name="collapsed ? 'menu-unfold' : 'menu-fold'" /></button>
+        <button class="mobile-toggle" aria-label="打开导航" :aria-expanded="mobileOpen" @click="mobileOpen = !mobileOpen"><AdminIcon :name="mobileOpen ? 'close' : 'menu'" /></button>
         <nav aria-label="面包屑" class="breadcrumbs"><span>工作空间</span><span>/</span><RouterLink v-if="route.meta.parentRoute" :to="String(route.meta.parentRoute)">返回列表</RouterLink><span>{{ route.meta.title }}</span></nav>
       </header>
       <main :class="{ 'admin-content': !chromeless }"><RouterView /></main>
