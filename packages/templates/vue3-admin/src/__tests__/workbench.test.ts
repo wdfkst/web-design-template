@@ -17,6 +17,12 @@ it.each(['asc', 'desc'] as const)('sorts dates %s stably with missing dates last
   expect(evaluateWorkbenchModule({ id: 'r', title: '记录', kind: 'records', collection: 'items', fields: ['date'], limit: 2, sort: { field: 'date', direction } }, rows, model)).toEqual({ kind: 'records', rows: [rows[1], rows[2]] })
   expect(rows).toEqual(before)
 })
+it.each(['asc', 'desc'] as const)('sorts numbers %s numerically with missing values last', direction => {
+  const source = [{ id: 1, amount: 2 }, { id: 2, amount: 10 }, { id: 3 }, { id: 4, amount: -1 }]
+  const result = evaluateWorkbenchModule({ id: 'r', title: '数值', kind: 'records', collection: 'items', fields: ['amount'], limit: 10, sort: { field: 'amount', direction } }, source, model)
+  expect(result).toEqual({ kind: 'records', rows: direction === 'asc' ? [source[3], source[0], source[1], source[2]] : [source[1], source[0], source[3], source[2]] })
+  expect(source.map(row => row.id)).toEqual([1, 2, 3, 4])
+})
 it('preserves shortcut routes', () => {
   expect(evaluateWorkbenchModule({ id: 's', title: '入口', kind: 'shortcuts', routes: ['/items'] }, [], model)).toEqual({ kind: 'shortcuts', routes: ['/items'] })
 })

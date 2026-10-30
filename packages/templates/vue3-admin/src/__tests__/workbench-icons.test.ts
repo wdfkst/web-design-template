@@ -15,6 +15,9 @@ it.each(modules)('renders a real header icon for $kind', module => {
   const model = { active: { type: 'boolean', label: '启用' } }
   const router = createRouter({ history: createMemoryHistory(), routes: [] })
   const wrapper = mount(AdminWorkbenchModule, { props: { module, model, result: evaluateWorkbenchModule(module, [], model) }, global: { plugins: [router] } })
-  try { expect(wrapper.find('header svg').exists()).toBe(true) }
+  try {
+    expect(wrapper.find('header svg').exists()).toBe(true)
+    expect(wrapper.classes()).toContain(`module-${module.kind}`)
+  }
   finally { wrapper.unmount() }
 })

@@ -18,5 +18,22 @@
 .is-jelly h2{font-size:20px;letter-spacing:-.3px;overflow-wrap:anywhere}
 .is-jelly[data-decoration=minimal] .brand-mark,.is-jelly[data-decoration=minimal] nav a[aria-current=page]{box-shadow:none}
 :root[data-admin-mode=dark] .is-jelly{--jelly-tint:color-mix(in srgb,var(--admin-glow-b) 8%,var(--admin-surface));--jelly-highlight:color-mix(in srgb,var(--admin-glow-c) 8%,var(--admin-surface))}
+.is-jelly :is(.list-panel,.form-panel,.detail-panel,.workbench-module){border-radius:var(--admin-jelly-panel-radius,16px);background:var(--admin-surface)}
+.is-jelly .workbench-module{padding:24px;border-top:3px solid var(--admin-border)}
+.is-jelly .workbench-module header svg{box-sizing:content-box;padding:10px;border-radius:13px;background:var(--jelly-highlight);color:var(--admin-text)}
+.is-jelly .module-summary{border-top-color:var(--admin-glow-b)}
+.is-jelly .module-summary .summary-value{font-size:42px;font-weight:700;line-height:1.1;margin-top:20px;letter-spacing:-1px}
+.is-jelly .module-breakdown{border-top-color:var(--admin-glow-c)}
+.is-jelly .breakdown>div{padding:10px 12px;border-radius:10px;background:var(--admin-surface)}
+.is-jelly .breakdown dd{border-radius:999px;border:1px solid var(--admin-border);padding:2px 10px;font-weight:600}
+.is-jelly .module-records{border-top-color:var(--admin-primary)}
+.is-jelly .module-records th{background:var(--admin-surface);font-weight:600}
+.is-jelly .module-shortcuts .module-links{gap:12px}
+.is-jelly .module-links a{padding:11px 16px;border-radius:999px;background:var(--admin-surface);border:1px solid var(--admin-border);color:var(--admin-text);text-decoration:none;font-weight:600}
+.is-jelly .detail-layout>aside.detail-panel{border-top:5px solid var(--admin-glow-c)}
+.is-jelly .detail-panel h2,.is-jelly fieldset.grouped legend{font-weight:650;font-size:18px}
+.is-jelly fieldset.grouped{border:1px solid var(--admin-border);border-radius:16px;padding:20px;margin-bottom:24px;background:var(--admin-surface);box-shadow:0 5px 0 color-mix(in srgb,var(--admin-glow-b) 9%,var(--admin-surface))}
+.is-jelly fieldset.grouped legend{padding-inline:8px;color:var(--admin-text)}
+.is-jelly .form-panel{max-width:980px;border-top:4px solid var(--admin-glow-b)}
 @media(max-width:700px){.is-jelly .admin-content{padding:16px}.is-jelly .admin-topbar{gap:12px}.is-jelly h1{font-size:28px}}
 @media(prefers-reduced-motion:reduce){.is-jelly *, .is-jelly *::before,.is-jelly *::after{transition:none!important;animation:none!important;transform:none!important;scroll-behavior:auto!important}}
