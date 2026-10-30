@@ -56,6 +56,25 @@ describe('generateAssets', () => {
     expect(next.requests[0]!.prompt).toContain('#654321')
     expect(next.requests[0]!.prompt).not.toContain('#123456')
   })
+  it('keys jelly images by actual prompt semantics rather than local motif', async () => {
+    const input = landingSpec()
+    input.experience = { kind: 'admin', navigation: [], presentation: { appearance: 'jelly', motif: 'spark', decoration: 'balanced', shell: 'sidebar' } }
+    input.assets[0]!.prompt = 'Rounded soft clay business toolkit'
+    const firstSpec = finalizeSpec(input)
+    const cache = new MemoryImageCache(), first = new StubProvider()
+    await generateAssets(firstSpec, { provider: first, outDir: await tempOut(), cache })
+    for (const color of [input.theme.colorTokens.primary, input.theme.colorTokens.secondary, input.theme.colorTokens.accent]) expect(first.requests[0]!.prompt).toContain(color)
+    input.experience.presentation!.motif = 'orbit'
+    const motifOnly = finalizeSpec(input), warm = new StubProvider()
+    expect(motifOnly.assets[0]!.contentHash).toBe(firstSpec.assets[0]!.contentHash)
+    await generateAssets(motifOnly, { provider: warm, outDir: await tempOut(), cache })
+    expect(warm.requests).toHaveLength(0)
+    input.assets[0]!.prompt = 'Rounded soft clay orbital business objects'
+    const changed = finalizeSpec(input), next = new StubProvider()
+    expect(changed.assets[0]!.contentHash).not.toBe(firstSpec.assets[0]!.contentHash)
+    await generateAssets(changed, { provider: next, outDir: await tempOut(), cache })
+    expect(next.requests[0]!.prompt).toContain('orbital business objects')
+  })
   it('writes every file at the path codegen expects', async () => {
     const spec = landingSpec()
     const outDir = await tempOut()

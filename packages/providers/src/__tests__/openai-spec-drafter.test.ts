@@ -82,7 +82,7 @@ describe('createOpenAISpecDrafter', () => {
     const derived = deriveSpecInput(JSON.parse(match![1]!))
     if (!derived.ok) throw new Error(derived.feedback)
     const spec = finalizeSpec(ProjectSpecInputSchema.parse(derived.value))
-    expect(spec.experience).toMatchObject({ kind: 'admin', presentation: { appearance: 'soft-glass' } })
+    expect(spec.experience).toMatchObject({ kind: 'admin', presentation: { appearance: 'jelly', motif: 'toolkit' } })
     expect(spec.styleBible.palette).toEqual([spec.theme.colorTokens.primary, spec.theme.colorTokens.secondary, spec.theme.colorTokens.accent])
   })
   test('teaches explicit admin modes, navigation, forms and controlled icons', async () => {
@@ -406,7 +406,14 @@ describe('createOpenAISpecDrafter', () => {
     expect(system).toContain('refresh resets')
     expect(system).toContain('readable contrasting surfaces')
     // Negative examples — what a console is not.
-    expect(system).toMatch(/do not[^.]*(large rounded cards|drop shadows|gradient buttons)/i)
+    expect(system).toContain('plain|soft-glass|jelly')
+    expect(system).toContain('spark|bloom|orbit|toolkit')
+    expect(system).toContain('coverField')
+    expect(system).toContain('./covers/')
+    expect(system).toContain('CSP')
+    expect(system).toContain('schema default remains soft-glass')
+    expect(system).toContain('jelly permits controlled gradients')
+    expect(system).not.toContain('heavy drop shadows, gradient buttons')
   })
 
   test('groups the catalogue by site kind so app blocks are not buried in marketing lines', async () => {

@@ -38,6 +38,14 @@ ${spec.pages.map(page => `- 路由 ${JSON.stringify(page.route)}：src/modules/$
 - 插画源文件位于 public/assets；配置中的宽高由区块侧车派生，替换图片时保持比例。
 - 接入 API 时替换共享 repository，保留页面动作与字段校验，真实认证和权限需自行实现。
 
+## 果冻风格与封面
+
+src/theme/presentation.ts 的 appearance 支持 plain / soft-glass / jelly，旧缺省仍为 soft-glass。仅 jelly 可配置 motif：spark、bloom、orbit、toolkit；省略时使用 spark。decoration:minimal 关闭纯装饰。src/theme/jelly.css 负责果冻样式，AdminMotif.vue 是本地受控图形，不消耗生成图片预算。
+
+列表 card.coverField 引用集合现有 string 字段（不接受 enum）；真实封面文件放在 public/covers，例如字段值 ./covers/sample.png。路径相对于项目文档目录解析，兼容平台 /preview/:id/ 子路径与 hash 路由；不使用 /covers/... 站点根路径。不支持路径穿越、编码路径、查询或片段。本功能不自动下载、上传或生成业务封面。
+
+无凭证 HTTPS 图片仅在部署策略允许时显示。平台预览 CSP 保持 img-src 'self' data:，第三方 HTTPS 图片会被阻止并回退为占位；独立部署由使用者管理域名与 CSP。图片使用 no-referrer，但第三方仍可能获取请求 IP，请自行评估隐私。缺图、非法 URL、加载失败均回退，minimal 使用无装饰占位。旧 cards 未配置 coverField 时保留原布局。
+
 ## 演示边界
 
 数据在页面之间共享；整页刷新后重置。未绑定集合的设置也仅保存在本次应用会话中。登录页仅为界面演示，不发送凭证，不提供真实认证、权限、API 或数据库。删除只影响本地模拟数据。
