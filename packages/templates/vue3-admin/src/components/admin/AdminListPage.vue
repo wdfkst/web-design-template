@@ -16,6 +16,7 @@ import AdminRecordCards from './AdminRecordCards.vue'
 import type { AdminListConfig } from '../../data/admin-config'
 type ListConfig = Omit<AdminListConfig, 'mode'> & { mode?: 'list' }
 import AdminWelcomePanel, { type WelcomePanel } from './AdminWelcomePanel.vue'
+import { presentation } from '../../theme/presentation'
 const props = defineProps<{ title: string; config: ListConfig; emptyPanel?: EmptyPanel; welcomePanel?: WelcomePanel }>()
 const router = useRouter()
 const collection = collections.find(item => item.id === props.config.collection)!
@@ -55,7 +56,7 @@ function act(action: Action, record: Record<string, unknown>) {
 </script>
 <template>
   <AdminPage :title="title" description="维护业务记录，按条件筛选并处理日常操作。">
-    <AdminWelcomePanel v-if="welcomePanel" v-bind="welcomePanel" />
+    <AdminWelcomePanel v-if="welcomePanel && presentation?.decoration !== 'minimal'" v-bind="welcomePanel" :presentation="presentation" />
     <AdminFilterBar v-if="config.filters.length" :collection="collection" :fields="config.filters" :values="draft" @query="query" @reset="reset" />
     <section class="list-panel"><div class="list-toolbar"><Space><strong>{{ collection.label }}</strong><span class="muted">共 {{ filtered.length }} 条</span><Tag v-if="selected.length">已选 {{ selected.length }} 项</Tag></Space><Space>
       <template v-for="action in config.actions" :key="action.kind"><Button v-if="action.kind === 'create'" type="primary" @click="open()">{{ action.label }}</Button><Button v-else-if="action.kind === 'bulk-delete'" danger :disabled="!selected.length" @click="remove(selected)">{{ action.label }}</Button></template>
