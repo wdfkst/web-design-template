@@ -43,6 +43,17 @@
 4. string 种子封面值不是可加载路径，初始均回退。README 已说明放文件和填写相对路径，但未点明种子值需替换；按文档 Minor 暂缓。
 5. README 用 sample.png，测试使用 sample.svg 并非矛盾：前者是使用示例，后者是原创测试资源。未限制扩展名，不认定功能缺陷；显式补充 SVG 示例作为低优先级文档建议暂缓。
 
+## 评审后补充处理（2026-10-30）
+
+上述暂缓清单保留为历史记录，当前处理状态如下；视觉门槛仍未结清。
+
+- 第 1 项已由 `e9f87b1` 修复：jelly/minimal 未配置 coverField 时不渲染空封面；配置业务封面时保留加载与失败占位。
+- 第 2 项已由 `211fcff` 收窄：reduced-motion 只重置 jelly 导航、按钮和卡片相关运动，不再全后代 transform:none。已有 CSSOM/选择器测试，不称为抽屉和弹窗浏览器交互验收。
+- 第 3 项：完整 drafter 示例主色改为深青色，styleBible 同步；仍保留按业务选择不同色板的指令。未调用真实模型，不宣称已实证消除示例锚定。
+- 第 4、5 项：导出 README 明确 string 种子值不是图片路径、需替换 src/data/mock.ts 中对应集合记录，并列 PNG/SVG 文件与相对字段路径示例；提醒 SVG 使用可信资源、仅放文件不会自动关联封面。
+- 本轮 `pnpm test`：9 包 746 例通过，包括三场景独立导出 vue-tsc/Vite 构建；`pnpm typecheck`、`git diff --check` 均 exit 0。保留既有 jsdom/stub 警告及 LF/CRLF 提示，未称零警告。日志：`docs-suite.log`、`docs-types.log`。
+- 本轮仅调整示例常量和面向人的说明，未新增锁定文案/色值的断言，未称 RED→GREEN；沿用现有示例解析与导出构建验证。未 push/merge，未重复整支评审。
+
 ## 实施裁定
 
 1. 工作台/详情/表单视觉集中在 `jelly.css`，复用既有结构 class，统一 `is-jelly` 门控，避免无必要 DOM 改动；代价是 CSS 依赖既有 class 契约。

@@ -42,7 +42,9 @@ ${spec.pages.map(page => `- 路由 ${JSON.stringify(page.route)}：src/modules/$
 
 src/theme/presentation.ts 的 appearance 支持 plain / soft-glass / jelly，旧缺省仍为 soft-glass。仅 jelly 可配置 motif：spark、bloom、orbit、toolkit；省略时使用 spark。decoration:minimal 关闭纯装饰。src/theme/jelly.css 负责果冻样式，AdminMotif.vue 是本地受控图形，不消耗生成图片预算。
 
-列表 card.coverField 引用集合现有 string 字段（不接受 enum）；真实封面文件放在 public/covers，例如字段值 ./covers/sample.png。路径相对于项目文档目录解析，兼容平台 /preview/:id/ 子路径与 hash 路由；不使用 /covers/... 站点根路径。不支持路径穿越、编码路径、查询或片段。本功能不自动下载、上传或生成业务封面。
+列表 card.coverField 引用集合现有 string 字段（不接受 enum）；真实封面文件放在 public/covers，例如 public/covers/sample.png 对应字段值 ./covers/sample.png，public/covers/sample.svg 对应 ./covers/sample.svg（SVG 请使用可信资源）。路径相对于项目文档目录解析，兼容平台 /preview/:id/ 子路径与 hash 路由；不使用 /covers/... 站点根路径。不支持路径穿越、编码路径、查询或片段。本功能不自动下载、上传或生成业务封面。
+
+自动生成的 string 种子值只是演示文本，不是可加载的图片路径；即使配置了 coverField，初始记录也可能全部显示占位。请先放入真实文件，再在 src/data/mock.ts 的对应集合种子记录中，将 coverField 指向的字段值替换为上述相对路径；仅放文件或仅设置 coverField 不会自动关联封面。也可通过包含该字段的表单修改当前记录，但整页刷新后仍会恢复种子数据。
 
 无凭证 HTTPS 图片仅在部署策略允许时显示。平台预览 CSP 保持 img-src 'self' data:，第三方 HTTPS 图片会被阻止并回退为占位；独立部署由使用者管理域名与 CSP。图片使用 no-referrer，但第三方仍可能获取请求 IP，请自行评估隐私。缺图、非法 URL、加载失败均回退，minimal 使用无装饰占位。旧 cards 未配置 coverField 时保留原布局。
 
