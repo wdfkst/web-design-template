@@ -54,6 +54,14 @@
 - 本轮 `pnpm test`：9 包 746 例通过，包括三场景独立导出 vue-tsc/Vite 构建；`pnpm typecheck`、`git diff --check` 均 exit 0。保留既有 jsdom/stub 警告及 LF/CRLF 提示，未称零警告。日志：`docs-suite.log`、`docs-types.log`。
 - 本轮仅调整示例常量和面向人的说明，未新增锁定文案/色值的断言，未称 RED→GREEN；沿用现有示例解析与导出构建验证。未 push/merge，未重复整支评审。
 
+## 当前提交重建预览复验（2026-10-30）
+
+- 基于 `fc15d72` 的当前源码重新运行 `preview.ts`，生成新的四套独立工程并实际 Vite 构建，隔离服务地址为 `http://127.0.0.1:50135`。使用本地 fixture 与主动拒绝模型调用的 provider，不是模型端到端验收。
+- 新产物三场景 × 两种 colorScheme 模拟 × 1440/1024/390 共 18 组检查通过：无页面横向溢出、无 pageerror；本地封面加载、筛选清除、缺图与 CSP 阻断回退通过。本次脚本未等待并断言 data-admin-mode，所以不把 colorScheme 模拟计作完整主题切换验收。
+- 三场景新增、必填焦点、编辑、详情、返回列表、删除及筛选空态均通过；`followup-browser.log` 与 `followup-crud.log` 记录结果。
+- 18 张新截图保存为 `followup-<场景>-<模式>-<宽度>.png`，未覆盖此前截图。浏览器 MCP 返回空结果，Read 读取 MCP 截图及独立 Playwright 截图均未向模型提供可见图像；因此未作审美判断，B 原型对照、真实欢迎图成功路径与混色区视觉门槛继续未完成。不得把再次运行相同自动化当成视觉债已经清偿。
+- 本轮未修改产品代码、未调用付费模型、未 push/merge；未重跑全仓单测与 typecheck（上一轮 `fc15d72` 已验证），本轮证据限实际重新构建及浏览器操作。
+
 ## 实施裁定
 
 1. 工作台/详情/表单视觉集中在 `jelly.css`，复用既有结构 class，统一 `is-jelly` 门控，避免无必要 DOM 改动；代价是 CSS 依赖既有 class 契约。
