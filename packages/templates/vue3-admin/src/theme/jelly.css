@@ -36,4 +36,4 @@
 .is-jelly fieldset.grouped legend{padding-inline:8px;color:var(--admin-text)}
 .is-jelly .form-panel{max-width:980px;border-top:4px solid var(--admin-glow-b)}
 @media(max-width:700px){.is-jelly .admin-content{padding:16px}.is-jelly .admin-topbar{gap:12px}.is-jelly h1{font-size:28px}}
-@media(prefers-reduced-motion:reduce){.is-jelly *, .is-jelly *::before,.is-jelly *::after{transition:none!important;animation:none!important;transform:none!important;scroll-behavior:auto!important}}
+@media(prefers-reduced-motion:reduce){.is-jelly nav a{transition:none!important}.is-jelly .ant-btn,.is-jelly .jelly-card{transition:none!important;transform:none!important}}
