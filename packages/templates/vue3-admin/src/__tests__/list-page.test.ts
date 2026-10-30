@@ -34,6 +34,22 @@ it.each(['table', 'cards'] as const)('%s shares paging, detail and field actions
     expect(wrapper.text()).toContain('已更新')
   } finally { wrapper.unmount() }
 })
+it.each(['table', 'cards'] as const)('%s preserves selections across pages', async variant => {
+  const store = useAdminCollection('items')
+  store.rows.value = Array.from({ length: 9 }, (_, i) => ({ id: i + 1, name: `记录${i + 1}` }))
+  const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/', component: { template: '<div />' } }] })
+  await router.push('/'); await router.isReady()
+  const wrapper = mount(AdminListPage, { props: { title: '记录', config: { variant, ...(variant === 'cards' ? { card: { titleField: 'name', summaryFields: [], coverField: 'name' } } : {}), collection: 'items', filters: [], columns: [{ field: 'name' }], actions: [{ kind: 'bulk-delete', label: '批量删除' }] } }, global: { plugins: [router] } })
+  try {
+    const selector = variant === 'cards' ? '[data-record-card] input[type="checkbox"]' : 'tbody input[type="checkbox"]'
+    await wrapper.get(selector).setValue(true)
+    wrapper.getComponent(Pagination).vm.$emit('update:current', 2); await flushPromises()
+    await wrapper.get(selector).setValue(true)
+    expect(wrapper.text()).toContain('已选 2 项')
+    wrapper.getComponent(Pagination).vm.$emit('update:current', 1); await flushPromises()
+    expect((wrapper.get(selector).element as HTMLInputElement).checked).toBe(true)
+  } finally { wrapper.unmount() }
+})
 Object.defineProperty(window, 'matchMedia', { writable: true, value: () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} }) })
 afterEach(() => { Modal.destroyAll(); document.body.innerHTML = ''; vi.restoreAllMocks() })
 
@@ -71,6 +87,8 @@ it.each(['table', 'cards'] as const)('%s creates and edits rows and deletes sele
     await click('批量删除')
     dialogButton('删除').click(); await flushPromises()
     expect(store.rows.value).toHaveLength(0)
+    expect(wrapper.text()).not.toMatch(/已选\s*\d+\s*项/)
+    expect(wrapper.findAllComponents(Button).find(item => item.text().replace(/\s/g, '') === '批量删除')!.props('disabled')).toBe(true)
     expect(wrapper.get('img[alt="空货架"]').attributes('src')).toBe('./assets/empty.png')
     expect(wrapper.get('img[alt="空货架"]').attributes('width')).toBe('512')
     expect(wrapper.text()).toContain('暂无商品')
