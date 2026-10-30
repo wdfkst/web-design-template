@@ -14,7 +14,7 @@ const chromeless = computed(() => route.meta.chrome === false)
 </script>
 
 <template>
-  <div class="admin-layout" :class="{ 'is-collapsed': collapsed, 'is-chromeless': chromeless, 'is-topbar': presentation?.shell === 'topbar', 'is-personalized': !!presentation, 'soft-glass': presentation?.appearance === 'soft-glass' }">
+  <div class="admin-layout" :data-decoration="presentation?.decoration" :class="{ 'is-jelly': presentation?.appearance === 'jelly', 'is-collapsed': collapsed, 'is-chromeless': chromeless, 'is-topbar': presentation?.shell === 'topbar', 'is-personalized': !!presentation, 'soft-glass': presentation?.appearance === 'soft-glass' }">
     <template v-if="!chromeless">
       <button v-if="mobileOpen" class="nav-backdrop" aria-label="关闭导航" @click="mobileOpen = false" />
       <aside :class="{ 'is-open': mobileOpen }" @keydown.esc="mobileOpen = false">

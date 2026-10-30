@@ -40,6 +40,18 @@ describe('admin layout', () => {
     await wrapper.get('aside nav a').trigger('click')
     expect(wrapper.get('button[aria-label="打开导航"]').attributes('aria-expanded')).toBe('false')
   })
+  it('scopes jelly decoration without changing legacy shells', async () => {
+    const wrapper = await render()
+    expect(wrapper.classes()).not.toContain('is-jelly')
+    await wrapper.setProps({ presentation: { appearance: 'jelly', decoration: 'minimal', shell: 'sidebar' } })
+    expect(wrapper.classes()).toContain('is-jelly')
+    expect(wrapper.attributes('data-decoration')).toBe('minimal')
+    for (const appearance of ['plain', 'soft-glass'] as const) {
+      await wrapper.setProps({ presentation: { appearance, decoration: 'balanced', shell: 'sidebar' } })
+      expect(wrapper.classes()).not.toContain('is-jelly')
+    }
+    wrapper.unmount()
+  })
   it('renders auth pages without chrome', async () => {
     const wrapper = await render('/login')
     expect(wrapper.find('aside').exists()).toBe(false)

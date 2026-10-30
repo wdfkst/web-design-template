@@ -1,0 +1,22 @@
+.admin-layout.is-jelly{background:var(--admin-bg);--jelly-tint:color-mix(in srgb,var(--admin-glow-b) 13%,var(--admin-surface));--jelly-highlight:color-mix(in srgb,var(--admin-glow-c) 16%,var(--admin-surface))}
+.admin-layout.is-jelly[data-decoration=balanced]{background:radial-gradient(ellipse at 90% 0%,color-mix(in srgb,var(--admin-glow-b) 16%,transparent),transparent 45%),radial-gradient(ellipse at 0% 95%,color-mix(in srgb,var(--admin-glow-c) 12%,transparent),transparent 40%),var(--admin-bg)}
+.is-jelly>aside{background:var(--admin-surface);border-right:1px solid var(--admin-border);padding-top:28px}
+.is-jelly .admin-brand{font-size:18px;letter-spacing:-.4px;overflow-wrap:anywhere}
+.is-jelly .brand-mark{width:40px;height:40px;border-radius:14px;box-shadow:inset 0 2px 0 #ffffff44,0 4px 0 color-mix(in srgb,var(--admin-primary) 35%,var(--admin-surface))}
+.is-jelly nav a{border-radius:16px;transition:background 150ms ease}
+.is-jelly nav a[aria-current=page]{box-shadow:inset 0 1px 0 #ffffff44,0 3px 0 color-mix(in srgb,var(--admin-primary) 30%,var(--admin-surface))}
+.is-jelly nav a svg{box-sizing:content-box;padding:5px;border-radius:9px;background:color-mix(in srgb,currentColor 9%,transparent);vertical-align:middle}
+.is-jelly .admin-topbar{background:var(--admin-surface);min-height:70px;border-bottom:1px solid var(--admin-border)}
+.is-jelly .admin-content{max-width:1640px;width:100%;box-sizing:border-box;margin-inline:auto}
+.is-jelly .ant-btn{border-radius:var(--admin-jelly-control-radius,12px);font-weight:600;transition:transform 140ms ease,box-shadow 140ms ease}
+.is-jelly .ant-btn-primary:not(.ant-btn-dangerous):not(:disabled){background:var(--admin-primary);color:var(--admin-on-primary);border-color:transparent;box-shadow:inset 0 2px 0 #ffffff40,0 4px 0 color-mix(in srgb,var(--admin-primary) 60%,var(--admin-surface))}
+.is-jelly .ant-btn-primary:not(.ant-btn-dangerous):not(:disabled):active{transform:translateY(1px);box-shadow:inset 0 1px 0 #ffffff30,0 2px 0 color-mix(in srgb,var(--admin-primary) 60%,var(--admin-surface))}
+.is-jelly :is(button,a,input,select,textarea):focus-visible{outline:3px solid var(--admin-primary);outline-offset:3px}
+.is-jelly .ant-tag{border-radius:999px;padding-inline:10px}
+.is-jelly :is(.ant-input,.ant-select-selector,.ant-input-number){border-radius:var(--admin-jelly-control-radius,12px)}
+.is-jelly h1{font-size:clamp(28px,3vw,34px);letter-spacing:-.7px;line-height:1.2;overflow-wrap:anywhere}
+.is-jelly h2{font-size:20px;letter-spacing:-.3px;overflow-wrap:anywhere}
+.is-jelly[data-decoration=minimal] .brand-mark,.is-jelly[data-decoration=minimal] nav a[aria-current=page]{box-shadow:none}
+:root[data-admin-mode=dark] .is-jelly{--jelly-tint:color-mix(in srgb,var(--admin-glow-b) 8%,var(--admin-surface));--jelly-highlight:color-mix(in srgb,var(--admin-glow-c) 8%,var(--admin-surface))}
+@media(max-width:700px){.is-jelly .admin-content{padding:16px}.is-jelly .admin-topbar{gap:12px}.is-jelly h1{font-size:28px}}
+@media(prefers-reduced-motion:reduce){.is-jelly *, .is-jelly *::before,.is-jelly *::after{transition:none!important;animation:none!important;transform:none!important;scroll-behavior:auto!important}}

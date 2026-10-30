@@ -10,6 +10,25 @@ function contrastRatio(a: string, b: string): number {
   return (Math.max(x, y) + .05) / (Math.min(x, y) + .05)
 }
 
+it.each(['#167d73', '#bc3763', '#e89c35'])('creates jelly geometry and readable colors for %s', primary => {
+  const spec = landingSpec()
+  spec.experience = { kind: 'admin', navigation: [], presentation: { appearance: 'jelly', decoration: 'balanced', shell: 'sidebar' } }
+  spec.theme.colorTokens.primary = primary
+  const css = renderAdminTheme(spec)['src/theme/generated.css']!
+  for (const mode of ['light', 'dark']) {
+    const body = css.split(`[data-admin-mode="${mode}"]{`)[1]!.split('}')[0]!
+    for (const [name, radius] of [['panel', 16], ['card', 20], ['hero', 28], ['control', 12]]) expect(body).toContain(`--admin-jelly-${name}-radius:${radius}px`)
+    const value = (name: string) => body.match(new RegExp(`--admin-${name}:(#[a-f0-9]+);`, 'i'))![1]!
+    expect(contrastRatio(value('primary'), value('on-primary'))).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(value('surface'), value('text'))).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(value('surface'), value('muted'))).toBeGreaterThanOrEqual(4.5)
+  }
+  for (const appearance of ['plain', 'soft-glass'] as const) {
+    spec.experience.presentation!.appearance = appearance
+    expect(renderAdminTheme(spec)['src/theme/generated.css']).not.toContain('--admin-jelly-')
+  }
+})
+
 it('repairs unreadable foregrounds for both generated surfaces', () => {
   const spec = landingSpec()
   spec.experience = { kind: 'admin', navigation: [{ id: 'home', label: '首页', route: '/' }], presentation: { appearance: 'soft-glass', decoration: 'balanced', shell: 'sidebar' } }
