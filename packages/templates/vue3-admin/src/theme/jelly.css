@@ -36,4 +36,26 @@
 .is-jelly fieldset.grouped legend{padding-inline:8px;color:var(--admin-text)}
 .is-jelly .form-panel{max-width:980px;border-top:4px solid var(--admin-glow-b)}
 @media(max-width:700px){.is-jelly .admin-content{padding:16px}.is-jelly .admin-topbar{gap:12px}.is-jelly h1{font-size:28px}}
+.is-jelly .workbench-page .welcome-panel{padding:18px 22px;margin-bottom:16px;gap:18px;border-radius:18px;box-shadow:none}
+.is-jelly .workbench-page .welcome-copy{padding-left:14px;border-left-width:3px}
+.is-jelly .workbench-page .welcome-panel h2{font-size:22px;margin-bottom:6px;letter-spacing:-.3px}
+.is-jelly .workbench-page .welcome-panel p{font-size:14px;line-height:1.6}
+.is-jelly .workbench-page .welcome-panel :is(img,.admin-motif){width:108px;height:90px;margin:0;flex-shrink:0}
+.is-jelly .workbench-page .workbench-module{padding:18px;border-top-width:2px}
+.is-jelly .workbench-page .workbench-module h2{font-size:16px;letter-spacing:0}
+.is-jelly .workbench-page .workbench-module header svg{padding:7px;border-radius:10px}
+.is-jelly .workbench-page .summary-strip .module-summary{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:18px;align-items:center}
+.is-jelly .workbench-page .summary-strip .module-summary header{grid-column:1;grid-row:1}
+.is-jelly .workbench-page .summary-strip .summary-value{grid-column:2;grid-row:1 / span 2;margin:0;font-size:34px;max-width:12ch}
+.is-jelly .workbench-page .summary-strip .module-note{grid-column:1;margin:5px 0 0;font-size:12px}
+.is-jelly .workbench-page .records-scroll{margin-top:14px}
+.is-jelly .workbench-page .module-records th{background:var(--jelly-tint)}
+.is-jelly .workbench-page .module-records :is(th,td){padding:11px 12px;font-size:13px}
+.is-jelly .workbench-page .module-records tbody tr:hover{background:var(--jelly-tint)}
+.is-jelly .workbench-page .breakdown{gap:6px;margin-top:12px}
+.is-jelly .workbench-page .breakdown>div{padding:8px 0;border-radius:0}
+.is-jelly .workbench-page .module-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px;margin-top:12px}
+.is-jelly .workbench-page .module-links a{padding:10px 12px;border-radius:10px;background:var(--jelly-tint)}
+.is-jelly .workbench-page .simulation-note{margin:12px 0 0}
+@media(max-width:600px){.is-jelly .workbench-page .welcome-panel{padding:16px;flex-wrap:nowrap}.is-jelly .workbench-page .welcome-panel :is(img,.admin-motif){width:64px;height:64px}.is-jelly .workbench-page .welcome-panel h2{font-size:18px}.is-jelly .workbench-page .workbench-module{padding:14px}.is-jelly .workbench-page .summary-strip .summary-value{font-size:28px}}
 @media(prefers-reduced-motion:reduce){.is-jelly nav a{transition:none!important}.is-jelly .ant-btn,.is-jelly .jelly-card{transition:none!important;transform:none!important}}
