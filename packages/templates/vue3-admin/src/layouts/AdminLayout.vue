@@ -3,11 +3,29 @@ import { computed, ref } from 'vue'
 import AdminIcon from '../components/admin/AdminIcon.vue'
 import { Dropdown, Menu, MenuItem } from 'ant-design-vue'
 import type { AdminPresentation } from '../data/admin-config'
-import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
+import { getDemoSession, type DemoAuthConfig } from '../auth/demo-session'
 
 interface NavItem { id: string; label: string; icon?: string; route?: string; children?: NavItem[] }
-defineProps<{ brand: string; navigation: NavItem[]; presentation?: AdminPresentation }>()
+const props = defineProps<{ brand: string; navigation: NavItem[]; presentation?: AdminPresentation; auth?: DemoAuthConfig | null }>()
 const route = useRoute()
+const router = useRouter()
+const signingOut = ref(false)
+const logoutError = ref('')
+async function signOut() {
+  if (!props.auth || signingOut.value) return
+  signingOut.value = true
+  logoutError.value = ''
+  getDemoSession().signOut()
+  try {
+    const failure = await router.replace(props.auth.loginRoute)
+    if (failure) logoutError.value = '已退出演示会话，返回登录页失败，请重试。'
+  } catch {
+    logoutError.value = '已退出演示会话，返回登录页失败，请重试。'
+  } finally {
+    signingOut.value = false
+  }
+}
 const collapsed = ref(false)
 const mobileOpen = ref(false)
 const chromeless = computed(() => route.meta.chrome === false)
@@ -45,7 +63,9 @@ const chromeless = computed(() => route.meta.chrome === false)
         <button v-if="presentation?.shell !== 'topbar'" class="desktop-toggle" aria-label="折叠菜单" :aria-expanded="!collapsed" @click="collapsed = !collapsed"><AdminIcon :name="collapsed ? 'menu-unfold' : 'menu-fold'" /></button>
         <button class="mobile-toggle" aria-label="打开导航" :aria-expanded="mobileOpen" @click="mobileOpen = !mobileOpen"><AdminIcon :name="mobileOpen ? 'close' : 'menu'" /></button>
         <nav aria-label="面包屑" class="breadcrumbs"><span>工作空间</span><span>/</span><RouterLink v-if="route.meta.parentRoute" :to="String(route.meta.parentRoute)">返回列表</RouterLink><span>{{ route.meta.title }}</span></nav>
+        <div v-if="auth" class="demo-user"><span>演示用户</span><button type="button" aria-label="退出登录" :disabled="signingOut" @click="signOut"><AdminIcon name="logout" /><span>退出</span></button></div>
       </header>
+      <p v-if="!chromeless && logoutError" class="logout-error" role="alert">{{ logoutError }}</p>
       <main :class="{ 'admin-content': !chromeless }"><RouterView /></main>
     </div>
   </div>
@@ -64,6 +84,8 @@ nav a[aria-current=page]{background:var(--admin-primary);color:var(--admin-on-pr
 .admin-workspace{min-width:0}.admin-topbar{height:60px;background:var(--admin-surface);border-bottom:1px solid var(--admin-border);display:flex;align-items:center;gap:20px;padding:0 20px}
 .admin-topbar button{border:0;background:transparent;color:var(--admin-text);font-size:20px;cursor:pointer;padding:6px}
 .breadcrumbs{display:flex;gap:12px;align-items:center;font-size:12px;color:var(--admin-muted)}
+.demo-user{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0;font-size:12px;color:var(--admin-muted)}.admin-topbar .demo-user button{display:flex;align-items:center;gap:6px;font-size:13px}.demo-user button:disabled{opacity:.5;cursor:wait}.demo-user button:focus-visible{outline:2px solid var(--admin-primary);outline-offset:2px}.logout-error{margin:12px 16px;color:var(--admin-text)}
+@media(max-width:700px){.admin-topbar{gap:10px}.breadcrumbs{min-width:0;overflow:hidden;white-space:nowrap}.demo-user{gap:6px}.demo-user>span{display:none}}
 .breadcrumbs a{padding:0}.admin-content{padding:24px;min-width:0}.mobile-toggle,.nav-backdrop{display:none}
 @media(max-width:700px){.admin-layout,.admin-layout.is-collapsed{grid-template-columns:minmax(0,1fr)}aside{display:none}aside.is-open{display:block;position:fixed;inset:0 auto 0 0;width:220px;z-index:101}.nav-backdrop{display:block;position:fixed;inset:0;background:var(--admin-overlay);border:0;z-index:100}.desktop-toggle{display:none}.mobile-toggle{display:block}.admin-content{padding:16px}.admin-topbar{padding:0 16px}}
 .is-topbar{grid-template-columns:minmax(0,1fr)}.is-topbar>aside{display:none}.horizontal-nav{display:flex;align-items:center;gap:18px;flex-wrap:wrap;min-width:0}.horizontal-nav strong{overflow-wrap:anywhere}.is-topbar .admin-topbar{height:auto;min-height:68px;flex-wrap:wrap;padding-block:12px}.is-topbar .breadcrumbs{margin-left:auto}

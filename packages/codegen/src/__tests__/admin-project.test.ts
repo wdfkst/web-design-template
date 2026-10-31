@@ -4,6 +4,42 @@ import { personalizedAdminFixtures } from './personalized-admin-fixtures.js'
 import { landingSpec } from './fixture.js'
 import { generateProject } from '../project.js'
 import { adminPageProps } from '../admin/page.js'
+import ts from 'typescript'
+
+function generatedAuth(source: string) {
+  const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText
+  const exports: Record<string, unknown> = {}
+  new Function('exports', js)(exports)
+  return exports.auth
+}
+it('derives demo routes in page order, not navigation order', () => {
+  const spec = fixture()
+  const home = { ...spec.pages[0]!, route: '/workspace' }
+  const auth = landingSpec().pages.find(page => page.pageType === 'auth')!
+  spec.assets = landingSpec().assets
+  spec.pages = [{ ...auth, route: '/signin' }, home, { ...auth, route: '/register' }, { ...home, route: '/items' }]
+  const files = generateProject(spec).files
+  expect(generatedAuth(files['src/navigation.ts']!)).toEqual({
+    loginRoute: '/signin', homeRoute: '/workspace',
+    protectedRoutes: ['/workspace', '/items'], authRoutes: ['/signin', '/register'],
+  })
+  expect(files['src/router.ts']).toContain('installDemoGuard(router, auth, getDemoSession())')
+  expect(files['src/router.ts']).toContain("from './navigation'")
+})
+it('does not install demo authentication without auth pages', () => {
+  const files = generateProject(fixture()).files
+  expect(generatedAuth(files['src/navigation.ts']!)).toBeNull()
+  expect(files['src/router.ts']).not.toContain('installDemoGuard')
+  expect(files['src/router.ts']).not.toContain('getDemoSession')
+})
+it('exports a null home for auth-only projects', () => {
+  const spec = fixture()
+  spec.pages = [landingSpec().pages.find(page => page.pageType === 'auth')!]
+  spec.assets = landingSpec().assets
+  expect(generatedAuth(generateProject(spec).files['src/navigation.ts']!)).toEqual({
+    loginRoute: '/signin', homeRoute: null, protectedRoutes: [], authRoutes: ['/signin'],
+  })
+})
 it.each([false, true])('classifies welcome and empty panels independently of block order %s', reverse => {
   const spec = fixture()
   const blocks = [{ component: 'AdminWelcomePanel', props: { headline: '欢迎' }, assetBindings: {} }, { component: 'EmptyStatePanel', props: { headline: '暂无' }, assetBindings: {} }]

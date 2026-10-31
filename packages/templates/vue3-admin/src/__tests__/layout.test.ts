@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { getDemoSession, type DemoAuthConfig } from '../auth/demo-session'
+import { installDemoGuard } from '../auth/demo-router'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import AdminLayout from '../layouts/AdminLayout.vue'
 
@@ -12,6 +14,75 @@ async function render(path = '/') {
   await router.isReady()
   return mount(AdminLayout, { props: { brand: '仓库后台', navigation: [{ id: 'items', label: '商品管理', route: '/' }] }, global: { plugins: [router] } })
 }
+
+const auth: DemoAuthConfig = { loginRoute: '/signin', homeRoute: '/workspace', protectedRoutes: ['/workspace', '/items'], authRoutes: ['/signin'] }
+
+async function renderAuthenticated() {
+  const session = getDemoSession()
+  session.signIn('demo', 'demo123')
+  const router = createRouter({ history: createMemoryHistory(), routes: [
+    { path: '/workspace', component: { template: '<p>工作台</p>' } },
+    { path: '/items', component: { template: '<p>商品</p>' } },
+    { path: '/signin', component: { template: '<p>登录</p>' }, meta: { chrome: false } },
+  ] })
+  installDemoGuard(router, auth, session)
+  await router.push('/workspace')
+  await router.push('/items')
+  const wrapper = mount(AdminLayout, { props: { brand: '后台', navigation: [], auth }, global: { plugins: [router] } })
+  return { wrapper, router, session }
+}
+
+afterEach(() => getDemoSession().signOut())
+
+describe('demo logout', () => {
+  it('clears the session, returns to the configured login and blocks browser back', async () => {
+    const { wrapper, router, session } = await renderAuthenticated()
+    expect(wrapper.text()).toContain('演示用户')
+    await wrapper.get('button[aria-label="退出登录"]').trigger('click')
+    await flushPromises()
+    expect(session.isAuthenticated()).toBe(false)
+    expect(router.currentRoute.value.path).toBe('/signin')
+    expect(wrapper.find('header').exists()).toBe(false)
+    router.back()
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/signin')
+    expect(router.currentRoute.value.query.returnTo).toBe('/workspace')
+    wrapper.unmount()
+  })
+  it.each(['abort', 'throw'] as const)('keeps logout effective when navigation fails: %s', async mode => {
+    const { wrapper, router, session } = await renderAuthenticated()
+    router.onError(() => {})
+    let release!: () => void
+    const pending = new Promise<void>(resolve => { release = resolve })
+    const remove = router.beforeEach(async to => {
+      if (to.path !== '/signin') return
+      await pending
+      if (mode === 'throw') throw new Error('navigation unavailable')
+      return false
+    })
+    const button = wrapper.get('button[aria-label="退出登录"]')
+    await button.trigger('click')
+    await button.trigger('click')
+    expect(session.isAuthenticated()).toBe(false)
+    expect(button.attributes('disabled')).toBeDefined()
+    release()
+    await flushPromises()
+    expect(session.isAuthenticated()).toBe(false)
+    expect(wrapper.find('[role="alert"]').exists()).toBe(true)
+    expect(button.attributes('disabled')).toBeUndefined()
+    remove()
+    await button.trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/signin')
+    wrapper.unmount()
+  })
+  it('does not offer demo controls without auth configuration', async () => {
+    const wrapper = await render()
+    expect(wrapper.text()).not.toContain('演示用户')
+    expect(wrapper.find('button[aria-label="退出登录"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+})
 
 describe('admin layout', () => {
   it('renders the business navigation and current title without fake controls', async () => {
