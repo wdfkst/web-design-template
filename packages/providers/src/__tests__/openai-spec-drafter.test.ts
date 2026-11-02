@@ -74,6 +74,30 @@ function schemaEnumValues(): string[] {
 }
 
 describe('createOpenAISpecDrafter', () => {
+  test('sends trusted admin style context while retaining draft requirements', async () => {
+    const { drafter, calls } = drafterWith(chatReply('{bad json'))
+    const result = await drafter.draft({
+      description: 'coffee', attempt: 2, feedback: 'fix pages',
+      adminStyle: { id: 'aurora', version: 1 },
+    })
+    const system = systemOf(calls[0]!)
+    expect(system).toContain('aurora-optical')
+    expect(system).toContain('#A7C6FF')
+    expect(system).toContain('experience.kind must be admin')
+    expect(system).toContain('theme and styleBible')
+    expect(system).toContain('You do not write asset ids, sizes or bindings')
+    expect(calls[0]!.body.messages.at(-1)?.content).toContain('fix pages')
+    expect(result).toBe('{bad json')
+  })
+
+  test('rejects unknown style versions without sending a request', async () => {
+    const { drafter, calls } = drafterWith(chatReply('{}'))
+    await expect(drafter.draft({ description: 'coffee', attempt: 1,
+      adminStyle: { id: 'aurora', version: 99 },
+    })).rejects.toThrow(/unsupported admin style/i)
+    expect(calls).toHaveLength(0)
+  })
+
   test('includes a complete admin example that derives and validates', async () => {
     const { drafter, calls } = drafterWith(chatReply('{}'))
     await drafter.draft({ description: '后台', attempt: 1 })

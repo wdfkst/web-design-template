@@ -17,6 +17,14 @@ export function styleBiblePrefix(bible: StyleBible): string {
   return parts.join(', ')
 }
 
+const MATERIAL_INSTRUCTION: Record<NonNullable<StyleBible['material']>, string> = {
+  'soft-clay': '柔软哑光黏土',
+  'natural-paper': '温润自然纸感手绘',
+  'frosted-glass': '磨砂半透明柔光',
+  'porcelain-metal': '白釉陶瓷与磨砂金属',
+  'aurora-optical': '半透明光学物体与克制极光',
+}
+
 const COMPOSITION_INSTRUCTION: Record<Asset['composition'], string> = {
   // The negative space is load-bearing: the block puts copy in the other half,
   // so a centered subject here means text lands on top of the artwork.
@@ -52,6 +60,7 @@ export interface BuiltPrompt {
 export function buildPrompt(asset: Asset, bible: StyleBible): BuiltPrompt {
   const segments = [
     styleBiblePrefix(bible),
+    ...(bible.material === undefined ? [] : [MATERIAL_INSTRUCTION[bible.material]]),
     asset.prompt,
     compositionInstruction(asset.composition),
     backgroundInstruction(asset, bible),

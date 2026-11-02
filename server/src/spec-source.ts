@@ -1,5 +1,5 @@
 import { deriveSpecInput } from '@vudt/blocks'
-import { finalizeSpec, parseProjectSpecInput, type ProjectSpec, type ProjectSpecInput } from '@vudt/spec'
+import { applyAdminStyle, resolveAdminStyle, finalizeSpec, parseProjectSpecInput, type AdminStyleReference, type ProjectSpec, type ProjectSpecInput } from '@vudt/spec'
 import { ServerError } from './errors.js'
 
 export interface SpecDraftRequest {
@@ -7,6 +7,7 @@ export interface SpecDraftRequest {
   /** Validation feedback from the previous attempt, to be appended to the prompt. */
   feedback?: string
   attempt: number
+  adminStyle?: AdminStyleReference
 }
 
 /**
@@ -20,6 +21,8 @@ export interface SpecDrafter {
 
 export interface DraftSpecOptions {
   maxAttempts?: number
+  adminStyle?: AdminStyleReference
+  adminStyleSeed?: number
   /** 每次尝试的模型调用之前触发，1-based。 */
   onAttempt?: (attempt: number) => void
   onValidation?: (state: 'started' | 'succeeded' | 'failed') => void
@@ -46,16 +49,39 @@ export async function draftSpec(
   options: DraftSpecOptions = {},
 ): Promise<{ spec: ProjectSpec; input: ProjectSpecInput; attempts: number }> {
   const maxAttempts = options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS
+  const adminStyle = options.adminStyle === undefined ? undefined : { ...options.adminStyle }
+  if (adminStyle !== undefined && resolveAdminStyle(adminStyle) === undefined) {
+    throw new ServerError(`unsupported admin style: ${adminStyle.id}@${adminStyle.version}`)
+  }
+  const seed = adminStyle === undefined ? 0 : options.adminStyleSeed ?? Math.floor(Math.random() * 0x80000000)
   let feedback: string | undefined
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     options.onAttempt?.(attempt)
-    const raw = await drafter.draft(
-      feedback === undefined ? { description, attempt } : { description, feedback, attempt },
-    )
+    const raw = await drafter.draft({
+      description, attempt,
+      ...(feedback === undefined ? {} : { feedback }),
+      ...(adminStyle === undefined ? {} : { adminStyle: { ...adminStyle } }),
+    })
 
     options.onValidation?.('started')
-    const derived = deriveSpecInput(raw)
+    let candidate = raw
+    if (raw !== null && typeof raw === 'object' && !Array.isArray(raw)) {
+      if (adminStyle !== undefined) {
+        const applied = applyAdminStyle(raw, adminStyle, seed)
+        if (!applied.ok) {
+          options.onValidation?.('failed')
+          feedback = applied.feedback
+          continue
+        }
+        candidate = applied.value
+      } else {
+        const { adminStyle: _untrusted, ...legacy } = raw as Record<string, unknown>
+        candidate = legacy
+      }
+    }
+    // Malformed JSON/primitives keep the original shape-validator feedback.
+    const derived = deriveSpecInput(candidate)
     if (!derived.ok) {
       options.onValidation?.('failed')
       feedback = derived.feedback

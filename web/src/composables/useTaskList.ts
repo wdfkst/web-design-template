@@ -1,3 +1,4 @@
+import type { AdminStyleId } from '@vudt/spec'
 import { onUnmounted, ref, type Ref } from 'vue'
 import {
   ACTIVE_STATUSES,
@@ -16,7 +17,7 @@ export interface UseTaskList {
   refresh: () => Promise<void>
   start: () => void
   stop: () => void
-  submit: (description: string) => Promise<TaskView | undefined>
+  submit: (description: string, adminStyleId?: AdminStyleId) => Promise<TaskView | undefined>
 }
 
 function hasActive(tasks: readonly TaskView[]): boolean {
@@ -75,9 +76,9 @@ export function useTaskList(options: { intervalMs?: number } = {}): UseTaskList 
     void tick()
   }
 
-  async function submit(description: string): Promise<TaskView | undefined> {
+  async function submit(description: string, adminStyleId?: AdminStyleId): Promise<TaskView | undefined> {
     try {
-      const created = await createTaskRequest(description)
+      const created = await (adminStyleId === undefined ? createTaskRequest(description) : createTaskRequest(description, adminStyleId))
       error.value = undefined
       await refresh()
       // A brand-new task is active, so resume polling even if the list had gone quiet.

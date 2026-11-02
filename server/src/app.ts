@@ -1,5 +1,6 @@
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify'
 import { WorkspaceRoot } from '@vudt/build'
+import { AdminStyleIdSchema, AdminStyleReferenceSchema, getCurrentAdminStyleReference, type AdminStyleReference } from '@vudt/spec'
 import type { ImageCache, ImageProcessor, ImageProvider } from '@vudt/imagegen'
 import { randomUUID } from 'node:crypto'
 import { stat } from 'node:fs/promises'
@@ -65,6 +66,7 @@ export interface TaskView {
   id: string
   status: TaskRecord['status']
   description: string
+  adminStyle?: AdminStyleReference
   createdAt: number
   finishedAt?: number
   previewUrl?: string
@@ -85,6 +87,7 @@ function toView(task: TaskRecord): TaskView {
     id: task.id,
     status: task.status,
     description: task.description,
+    ...(task.adminStyle === undefined ? {} : { adminStyle: { id: task.adminStyle.id, version: task.adminStyle.version } }),
     createdAt: task.createdAt,
     ...(task.finishedAt === undefined ? {} : { finishedAt: task.finishedAt }),
     ...(task.previewPath === undefined ? {} : { previewUrl: task.previewPath }),
@@ -147,12 +150,28 @@ export function buildApp(deps: AppDeps): FastifyInstance & { vudt: AppContext } 
    * Caller-supplied descriptions are already trimmed; length is validated here
    * because the prompt is a cost input.
    */
-  function createTask(description: string, ownerId: string | null): CreateOutcome {
+  function createTask(
+    description: string,
+    ownerId: string | null,
+    style?: { kind: 'selection'; id: unknown } | { kind: 'snapshot'; reference: AdminStyleReference },
+  ): CreateOutcome {
     if (description === '') {
       throw new ServerError('description is required')
     }
     if (description.length > maxDescription) {
       throw new ServerError(`description exceeds ${maxDescription} characters`, 413)
+    }
+
+    let adminStyle: AdminStyleReference | undefined
+    if (style?.kind === 'selection') {
+      const parsed = AdminStyleIdSchema.safeParse(style.id)
+      if (!parsed.success) throw new ServerError('invalid adminStyleId')
+      adminStyle = getCurrentAdminStyleReference(parsed.data)
+    } else if (style?.kind === 'snapshot') {
+      const parsed = AdminStyleReferenceSchema.safeParse(style.reference)
+      if (!parsed.success) throw new ServerError('invalid adminStyle reference')
+      // Preserve historical versions; the runner rejects unsupported ones before any model call.
+      adminStyle = parsed.data
     }
 
     // Lowercase slug: the id becomes a workspace directory name and a URL segment.
@@ -165,6 +184,7 @@ export function buildApp(deps: AppDeps): FastifyInstance & { vudt: AppContext } 
       ownerId,
       status: 'queued',
       description,
+      ...(adminStyle === undefined ? {} : { adminStyle }),
       createdAt: Date.now(),
       settings,
     })
@@ -199,11 +219,15 @@ export function buildApp(deps: AppDeps): FastifyInstance & { vudt: AppContext } 
   }
 
   app.post('/tasks', async (request, reply) => {
-    const body = request.body as { description?: unknown; ownerId?: unknown } | undefined
+    const body = request.body as { description?: unknown; ownerId?: unknown; adminStyleId?: unknown } | undefined
     const description = typeof body?.description === 'string' ? body.description.trim() : ''
     const ownerId = typeof body?.ownerId === 'string' && body.ownerId !== '' ? body.ownerId : null
 
-    const { task, accepted } = createTask(description, ownerId)
+    const { task, accepted } = createTask(description, ownerId,
+      body != null && Object.hasOwn(body, 'adminStyleId')
+        ? { kind: 'selection', id: body.adminStyleId }
+        : undefined,
+    )
     if (!accepted) {
       return reply.code(503).send({ error: 'queue is full, retry later' })
     }
@@ -217,7 +241,9 @@ export function buildApp(deps: AppDeps): FastifyInstance & { vudt: AppContext } 
 
     // Same description, fresh draft: there is no partial state to resume, and a
     // draft-stage failure leaves nothing to reuse anyway.
-    const { task, accepted } = createTask(original.description, original.ownerId)
+    const { task, accepted } = createTask(original.description, original.ownerId,
+      original.adminStyle === undefined ? undefined : { kind: 'snapshot', reference: original.adminStyle },
+    )
     if (!accepted) {
       return reply.code(503).send({ error: 'queue is full, retry later' })
     }
@@ -405,6 +431,11 @@ export function buildApp(deps: AppDeps): FastifyInstance & { vudt: AppContext } 
       }
 
       const asset = await openPreviewFile(webDistDir, path === '/' ? 'index.html' : path.slice(1))
+      // Opaque sandbox origins need anonymous CORS for ES modules, scoped to public samples only.
+      if (path.startsWith('/admin-style-previews/')) {
+        if (asset === null) return reply.code(404).send({ error: 'not found' })
+        reply.header('access-control-allow-origin', '*')
+      }
       const file = asset ?? (await openPreviewFile(webDistDir, 'index.html'))
       if (file === null) return reply.code(404).send({ error: 'not found' })
 

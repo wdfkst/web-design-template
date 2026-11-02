@@ -9,6 +9,8 @@ workspaces/
 
 # 生成产物缓存
 .cache/
+web/public/admin-style-previews/
+web/public/.admin-preview-*/
 
 # Server task workspaces and image cache (regenerated per run)
 .vudt/

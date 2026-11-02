@@ -1,5 +1,6 @@
 import {
   AdminPageSchema,
+  AdminStyleReferenceSchema,
   ExperienceSchema,
   BlockSchema,
   CollectionSchema,
@@ -52,6 +53,7 @@ const DraftPageSchema = z.object({
  * it to force one — is the mistake this split avoids.
  */
 export const ProjectDraftSchema = z.object({
+  adminStyle: AdminStyleReferenceSchema.optional(),
   experience: ExperienceSchema.optional(),
   meta: MetaSchema,
   theme: ThemeSchema,
@@ -113,6 +115,7 @@ export function deriveSpecInput(draft: unknown): DeriveSpecResult {
     return {
       ok: true,
       value: {
+        ...(parsed.data.adminStyle === undefined ? {} : { adminStyle: parsed.data.adminStyle }),
         ...(parsed.data.experience === undefined ? {} : { experience: parsed.data.experience }),
         meta,
         theme,

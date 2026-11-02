@@ -5,6 +5,8 @@ import { Dropdown, Menu, MenuItem } from 'ant-design-vue'
 import type { AdminPresentation } from '../data/admin-config'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { getDemoSession, type DemoAuthConfig } from '../auth/demo-session'
+import { adminStyle, styleLayout } from '../theme/presentation'
+import '../theme/admin-styles.css'
 
 interface NavItem { id: string; label: string; icon?: string; route?: string; children?: NavItem[] }
 const props = defineProps<{ brand: string; navigation: NavItem[]; presentation?: AdminPresentation; auth?: DemoAuthConfig | null }>()
@@ -26,16 +28,17 @@ async function signOut() {
     signingOut.value = false
   }
 }
-const collapsed = ref(false)
+const collapsed = ref(styleLayout?.shellVariant === 'icon-sidebar')
+const topNavigation = computed(() => styleLayout ? ['top-nav', 'top-nav-context'].includes(styleLayout.shellVariant) : props.presentation?.shell === 'topbar')
 const mobileOpen = ref(false)
 const chromeless = computed(() => route.meta.chrome === false)
 </script>
 
 <template>
-  <div class="admin-layout" :data-decoration="presentation?.decoration" :class="{ 'is-jelly': presentation?.appearance === 'jelly', 'is-collapsed': collapsed, 'is-chromeless': chromeless, 'is-topbar': presentation?.shell === 'topbar', 'is-personalized': !!presentation, 'soft-glass': presentation?.appearance === 'soft-glass' }">
+  <div class="admin-layout" :data-admin-style="adminStyle?.id" :data-shell="styleLayout?.shellVariant" :data-decoration="presentation?.decoration" :class="{ 'is-jelly': !adminStyle && presentation?.appearance === 'jelly', 'is-collapsed': collapsed, 'is-chromeless': chromeless, 'is-topbar': topNavigation, 'is-personalized': !!presentation, 'soft-glass': !adminStyle && presentation?.appearance === 'soft-glass' }">
     <template v-if="!chromeless">
       <button v-if="mobileOpen" class="nav-backdrop" aria-label="关闭导航" @click="mobileOpen = false" />
-      <aside :class="{ 'is-open': mobileOpen }" @keydown.esc="mobileOpen = false">
+      <aside v-if="!styleLayout || !topNavigation || mobileOpen" :class="{ 'is-open': mobileOpen }" @keydown.esc="mobileOpen = false">
         <div class="admin-brand"><span class="brand-mark">{{ brand.slice(0, 1) }}</span><span v-if="!collapsed">{{ brand }}</span></div>
         <nav aria-label="业务导航">
           <template v-for="item in navigation" :key="item.id">
@@ -50,7 +53,7 @@ const chromeless = computed(() => route.meta.chrome === false)
     </template>
     <div class="admin-workspace">
       <header v-if="!chromeless" class="admin-topbar">
-        <nav v-if="presentation?.shell === 'topbar'" class="horizontal-nav" aria-label="顶部业务导航">
+        <nav v-if="topNavigation" class="horizontal-nav" aria-label="顶部业务导航">
           <strong>{{ brand }}</strong>
           <template v-for="item in navigation" :key="item.id">
             <Dropdown v-if="item.children" :trigger="['click']">
@@ -60,7 +63,7 @@ const chromeless = computed(() => route.meta.chrome === false)
             <RouterLink v-else :to="item.route!" :aria-current="route.path === item.route ? 'page' : undefined"><AdminIcon :name="item.icon" /> {{ item.label }}</RouterLink>
           </template>
         </nav>
-        <button v-if="presentation?.shell !== 'topbar'" class="desktop-toggle" aria-label="折叠菜单" :aria-expanded="!collapsed" @click="collapsed = !collapsed"><AdminIcon :name="collapsed ? 'menu-unfold' : 'menu-fold'" /></button>
+        <button v-if="!topNavigation" class="desktop-toggle" aria-label="折叠菜单" :aria-expanded="!collapsed" @click="collapsed = !collapsed"><AdminIcon :name="collapsed ? 'menu-unfold' : 'menu-fold'" /></button>
         <button class="mobile-toggle" aria-label="打开导航" :aria-expanded="mobileOpen" @click="mobileOpen = !mobileOpen"><AdminIcon :name="mobileOpen ? 'close' : 'menu'" /></button>
         <nav aria-label="面包屑" class="breadcrumbs"><span>工作空间</span><span>/</span><RouterLink v-if="route.meta.parentRoute" :to="String(route.meta.parentRoute)">返回列表</RouterLink><span>{{ route.meta.title }}</span></nav>
         <div v-if="auth" class="demo-user"><span>演示用户</span><button type="button" aria-label="退出登录" :disabled="signingOut" @click="signOut"><AdminIcon name="logout" /><span>退出</span></button></div>

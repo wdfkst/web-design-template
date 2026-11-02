@@ -1,5 +1,7 @@
 import { z } from 'zod'
 import { ExperienceSchema, checkAdminIntegrity } from './admin.js'
+import { AdminStyleReferenceSchema, resolveAdminStyle } from './admin-style.js'
+import { effectiveStyleBible } from './effective-style.js'
 import { AssetInputSchema, AssetSchema, renderSizeMatchesRatio } from './asset.js'
 import { CollectionSchema } from './collection.js'
 import { FormSchema } from './form.js'
@@ -14,6 +16,7 @@ export const MetaSchema = z.object({
 })
 
 const baseShape = {
+  adminStyle: AdminStyleReferenceSchema.optional(),
   experience: ExperienceSchema.optional(),
   meta: MetaSchema,
   theme: ThemeSchema,
@@ -157,17 +160,54 @@ function checkReferentialIntegrity(spec: Checked, ctx: z.RefinementCtx): void {
   }
 }
 
+function sameValue(actual: unknown, expected: unknown): boolean {
+  if (actual === expected) return true
+  if (!actual || !expected || typeof actual !== 'object' || typeof expected !== 'object') return false
+  if (Array.isArray(actual) !== Array.isArray(expected)) return false
+  const a = actual as Record<string, unknown>
+  const b = expected as Record<string, unknown>
+  return Object.keys(a).length === Object.keys(b).length &&
+    Object.keys(b).every(key => Object.hasOwn(a, key) && sameValue(a[key], b[key]))
+}
+
+function checkAdminStyleIntegrity(value: z.infer<z.ZodObject<typeof baseShape>>, ctx: z.RefinementCtx): void {
+  if (!value.adminStyle) return
+  const definition = resolveAdminStyle(value.adminStyle)
+  const issue = (path: string[], message: string) => ctx.addIssue({ code: 'custom', path, message })
+  if (!definition) {
+    issue(['adminStyle'], 'unsupported adminStyle reference/version')
+    return
+  }
+  if (value.experience?.kind !== 'admin') {
+    issue(['experience'], 'adminStyle requires admin experience')
+    return
+  }
+  if (!sameValue(value.theme, definition.theme)) issue(['theme'], 'theme does not match adminStyle')
+  if (!sameValue(value.experience.presentation, definition.presentation)) {
+    issue(['experience', 'presentation'], 'presentation does not match adminStyle')
+  }
+  const expectedStyle = effectiveStyleBible({
+    ...value,
+    theme: definition.theme,
+    experience: { ...value.experience, presentation: definition.presentation },
+    styleBible: { ...definition.styleBible, material: definition.material, palette: [], seed: value.styleBible.seed },
+  })
+  if (!sameValue(value.styleBible, expectedStyle)) issue(['styleBible'], 'styleBible does not match adminStyle')
+}
+
 /** What the LLM returns: no contentHash yet. */
 export const ProjectSpecInputSchema = z
   .object({ ...baseShape, assets: z.array(AssetInputSchema) })
   .superRefine(checkReferentialIntegrity)
   .superRefine(checkAdminIntegrity)
+  .superRefine(checkAdminStyleIntegrity)
 
 /** After finalizeSpec() has filled in derived hashes. */
 export const ProjectSpecSchema = z
   .object({ ...baseShape, assets: z.array(AssetSchema) })
   .superRefine(checkReferentialIntegrity)
   .superRefine(checkAdminIntegrity)
+  .superRefine(checkAdminStyleIntegrity)
 
 export type Meta = z.infer<typeof MetaSchema>
 export type ProjectSpecInput = z.infer<typeof ProjectSpecInputSchema>

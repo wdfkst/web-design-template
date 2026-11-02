@@ -1,0 +1,75 @@
+/* Named skins are scoped away from legacy appearance styles. */
+.admin-layout[data-admin-style]{background:var(--admin-bg);color:var(--admin-text);font-family:var(--admin-font);--style-panel-radius:var(--admin-radius);--style-panel-shadow:var(--admin-shadow)}
+.admin-layout[data-admin-style] :is(.admin-workspace,.admin-content,.admin-page,.list-panel,.form-panel,.detail-panel,.record-cards,.filter-bar){min-width:0}
+.admin-layout[data-admin-style] :is(.workbench-module,.list-panel,.form-panel,.detail-panel,.record-cards>article,.welcome-panel,.empty-state){border:1px solid var(--admin-border);border-radius:var(--style-panel-radius);background:var(--admin-surface);color:var(--admin-text);box-shadow:var(--style-panel-shadow)}
+.admin-layout[data-admin-style] :is(.welcome-panel,.workbench-module){padding:24px}
+.admin-layout[data-admin-style] .welcome-panel .welcome-copy{border:0;padding-left:0}
+.admin-layout[data-admin-style] .welcome-panel h2{font-size:28px;letter-spacing:-.5px}
+.admin-layout[data-admin-style] .welcome-panel img{width:200px;height:200px}
+.admin-layout[data-admin-style] :is(.module-note,.module-meta,.simulation-note,.muted,.page-heading p,.ant-empty-description){color:var(--admin-muted)}
+.admin-layout[data-admin-style] :is(.ant-btn,.ant-input,.ant-input-affix-wrapper,.ant-select-selector,.ant-picker,.ant-pagination-item){border-radius:var(--admin-control-radius)}
+.admin-layout[data-admin-style] .ant-btn{box-shadow:none}
+.admin-layout[data-admin-style] .ant-btn-primary{background:var(--admin-primary);color:var(--admin-on-primary);border-color:var(--admin-primary)}
+.admin-layout[data-admin-style] :is(.ant-input,.ant-input-affix-wrapper,.ant-select-selector,.ant-picker){background:var(--admin-surface);color:var(--admin-text)}
+.admin-layout[data-admin-style] :is(input,textarea)::placeholder{color:var(--admin-muted);opacity:1}
+.admin-layout[data-admin-style] .filter-bar{border-bottom:1px solid var(--admin-border);padding-bottom:20px;gap:16px}
+.admin-layout[data-admin-style] :is(.list-pagination,.list-toolbar){gap:16px;flex-wrap:wrap}
+.admin-layout[data-admin-style] :is(.ant-table-thead>tr>th,.records-scroll th){background:var(--admin-bg);color:var(--admin-muted);border-bottom:1px solid var(--admin-border)}
+.admin-layout[data-admin-style] :is(.ant-table-tbody>tr>td,.records-scroll td){background:var(--admin-surface);color:var(--admin-text);border-bottom:1px solid var(--admin-border)}
+.admin-layout[data-admin-style] :is(.ant-table-content,.records-scroll){overflow-x:auto;max-width:100%}
+.admin-layout[data-admin-style] .ant-pagination-item-active{border:2px solid var(--admin-primary);background:var(--admin-surface)}
+.admin-layout[data-admin-style] .ant-pagination-item-active a{color:var(--admin-primary);font-weight:700}
+.admin-layout[data-admin-style] :is(.ant-form-item-explain-error,.auth-feedback [role=alert],.logout-error){color:var(--admin-error)}
+.admin-layout[data-admin-style] :is(.ant-input-status-error,.ant-input-affix-wrapper-status-error){border-color:var(--admin-error);border-width:2px}
+.admin-layout[data-admin-style] :is(button,a,input,textarea,select,[tabindex]):focus-visible{outline:3px solid var(--admin-focus);outline-offset:3px}
+.admin-layout[data-admin-style] .ant-input-affix-wrapper:focus-within{outline:3px solid var(--admin-focus);outline-offset:3px}
+.admin-layout[data-admin-style] .empty-state{padding:28px;text-align:center}
+.admin-layout[data-admin-style] :is(.admin-brand,.page-heading h1,.horizontal-nav strong){overflow-wrap:anywhere}
+.admin-layout[data-admin-style] .admin-topbar{box-shadow:none}
+.admin-layout[data-admin-style=soft]{--style-panel-radius:24px;--style-panel-shadow:0 7px 0 #7550B50A,0 16px 32px #7550B510}
+.admin-layout[data-admin-style=soft]>aside{padding-top:28px;border-right:1px solid var(--admin-border)}
+.admin-layout[data-admin-style=soft] .brand-mark{border-radius:50%}
+.admin-layout[data-admin-style=soft] .welcome-panel{border-radius:32px;padding:28px 32px}
+.admin-layout[data-admin-style=soft] .ant-btn-primary{box-shadow:0 4px 0 #28213525}
+.admin-layout[data-admin-style=soft] .record-cards>article{overflow:hidden}
+.admin-layout[data-admin-style=warm]{--style-panel-radius:12px;--style-panel-shadow:0 3px 0 #302E260A}
+.admin-layout[data-admin-style=warm]:not(.is-collapsed):not(.is-chromeless){grid-template-columns:240px minmax(0,1fr)}
+.admin-layout[data-admin-style=warm]>aside{background:var(--admin-bg);border-right:1px solid var(--admin-border)}
+.admin-layout[data-admin-style=warm] .admin-topbar{background:var(--admin-bg)}
+.admin-layout[data-admin-style=warm] .style-context{border-left:1px solid var(--admin-border);padding-left:20px}
+.admin-layout[data-admin-style=warm] .welcome-panel{border-left:4px solid var(--admin-primary);box-shadow:none}
+.admin-layout[data-admin-style=mist]{--style-panel-radius:16px;--style-panel-shadow:0 10px 32px #5269980D}
+.admin-layout[data-admin-style=mist] .admin-topbar{border-bottom:1px solid var(--admin-border);background:color-mix(in srgb,var(--admin-surface) 92%,var(--admin-bg))}
+.admin-layout[data-admin-style=mist] .welcome-panel{box-shadow:none;border-width:0 0 1px;border-radius:0;background:transparent}
+.admin-layout[data-admin-style=mist] .style-workbench{max-width:1180px;margin-inline:auto}
+.admin-layout[data-admin-style=porcelain]{--style-panel-radius:20px;--style-panel-shadow:inset 0 2px 0 #ffffff,0 5px 0 #2533410D,0 14px 28px #2533410A}
+.admin-layout[data-admin-style=porcelain]:not(.is-collapsed):not(.is-chromeless){grid-template-columns:272px minmax(0,1fr)}
+.admin-layout[data-admin-style=porcelain]>aside{border-right:1px solid var(--admin-border);padding:28px 20px}
+.admin-layout[data-admin-style=porcelain] .brand-mark{border-radius:12px;box-shadow:inset 0 1px 0 #ffffff55}
+.admin-layout[data-admin-style=porcelain] .workbench-module>header{padding-bottom:16px;border-bottom:1px solid var(--admin-border)}
+.admin-layout[data-admin-style=porcelain] .ant-btn{border-width:1px;box-shadow:0 3px 0 #25334112}
+.admin-layout[data-admin-style=aurora]{--style-panel-radius:16px;--style-panel-shadow:0 16px 36px #00000025}
+.admin-layout[data-admin-style=aurora] .admin-topbar{border-bottom:1px solid var(--admin-border)}
+.admin-layout[data-admin-style=aurora] .welcome-panel{border-top:2px solid var(--admin-primary);box-shadow:0 -8px 32px #A7C6FF0A}
+.admin-layout[data-admin-style=aurora] .style-context{padding:16px;background:var(--admin-bg);border:1px solid var(--admin-border);border-radius:20px}
+.admin-layout[data-admin-style=aurora] .style-context .workbench-module{box-shadow:none}
+.admin-layout[data-admin-style] .auth-page{--auth-paper:var(--admin-bg);--auth-white:var(--admin-surface);--auth-ink:var(--admin-text);--auth-muted:var(--admin-muted);--auth-line:var(--admin-border);background:var(--admin-bg);color:var(--admin-text);color-scheme:inherit;font-family:var(--admin-font)}
+.admin-layout[data-admin-style] .auth-shell{border:1px solid var(--admin-border);border-radius:var(--style-panel-radius);box-shadow:var(--style-panel-shadow)}
+.admin-layout[data-admin-style] .auth-visual{background:var(--admin-bg);border-right:1px solid var(--admin-border)}
+.admin-layout[data-admin-style] .auth-intro h2{font-family:inherit}
+.admin-layout[data-admin-style] :is(.auth-welcome,.auth-mini-icons>.anticon){background:var(--admin-surface);color:var(--admin-primary);box-shadow:none;border:1px solid var(--admin-border)}
+.admin-layout[data-admin-style] .auth-page .auth-field .ant-input-affix-wrapper{background:var(--admin-surface);border:1px solid var(--admin-border);box-shadow:none;border-radius:var(--admin-control-radius)}
+.admin-layout[data-admin-style] .auth-page .auth-field .ant-input::placeholder{color:var(--admin-muted)}
+.admin-layout[data-admin-style] .auth-page .auth-field .ant-input-affix-wrapper:focus-within{outline:3px solid var(--admin-focus);outline-offset:3px}
+.admin-layout[data-admin-style] .auth-page .auth-submit{background:var(--admin-primary);color:var(--admin-on-primary);border:1px solid var(--admin-primary);border-radius:var(--admin-control-radius);box-shadow:var(--style-panel-shadow)}
+.admin-layout[data-admin-style] .auth-page .auth-submit:not(:disabled):hover{background:var(--admin-primary);color:var(--admin-on-primary);border-color:var(--admin-primary);transform:none}
+.admin-layout[data-admin-style] .auth-page .auth-demo .ant-btn{background:var(--admin-surface);color:var(--admin-text);border-color:var(--admin-border);border-radius:var(--admin-control-radius)}
+.admin-layout[data-admin-style] .auth-brand>.anticon{background:var(--admin-primary);color:var(--admin-on-primary)}
+.admin-layout[data-admin-style=soft] .auth-visual{border-radius:0 32px 32px 0}
+.admin-layout[data-admin-style=warm] .auth-shell{box-shadow:none}
+.admin-layout[data-admin-style=mist] .auth-visual{border-right:0;border-bottom:1px solid var(--admin-border)}
+.admin-layout[data-admin-style=porcelain] .auth-form-side{border-top:4px solid var(--admin-primary)}
+.admin-layout[data-admin-style=aurora] .auth-visual{box-shadow:inset 0 2px 0 var(--admin-primary)}
+@media(max-width:1000px){.admin-layout[data-admin-style=warm] .style-context{border-left:0;padding-left:0}}
+@media(max-width:700px){.admin-layout[data-admin-style]:not(.is-chromeless){grid-template-columns:minmax(0,1fr)}.admin-layout[data-admin-style] .admin-content{padding:16px}.admin-layout[data-admin-style]>aside.is-open{width:min(280px,85vw)}.admin-layout[data-admin-style] .welcome-panel{padding:20px;flex-wrap:wrap}.admin-layout[data-admin-style] .welcome-panel img{width:140px;height:140px}.admin-layout[data-admin-style] :is(.workbench-module,.list-panel,.form-panel,.detail-panel){padding:16px}.admin-layout[data-admin-style] .auth-visual{border-radius:0;border-right:0}.admin-layout[data-admin-style] .filter-bar>*{max-width:100%}.admin-layout[data-admin-style] .ant-pagination{display:flex;flex-wrap:wrap;gap:4px}}
+@media(prefers-reduced-motion:reduce){.admin-layout[data-admin-style] .ant-btn,.admin-layout[data-admin-style] .auth-submit,.admin-layout[data-admin-style] .auth-robot{transition:none;animation:none}.admin-layout[data-admin-style] .auth-scene:hover .auth-robot,.admin-layout[data-admin-style] .auth-submit:not(:disabled):active{transform:none}}

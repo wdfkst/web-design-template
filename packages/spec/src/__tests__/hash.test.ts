@@ -3,7 +3,40 @@ import { assetContentHash, finalizeSpec } from '../hash.js'
 import { parseProjectSpec } from '../parse.js'
 import { validSpecInput } from './fixture.js'
 
+const materials = ['soft-clay', 'natural-paper', 'frosted-glass', 'porcelain-metal', 'aurora-optical'] as const
+
 describe('assetContentHash', () => {
+  it('preserves the complete legacy fixture hash when material is absent', () => {
+    const spec = validSpecInput()
+    expect(assetContentHash(spec.assets[0]!, spec.styleBible)).toBe('784eaebd0e0bb79d')
+    expect(assetContentHash(spec.assets[0]!, { ...spec.styleBible, material: undefined })).toBe('784eaebd0e0bb79d')
+  })
+
+  it.each(materials)('invalidates the cache for %s and stays deterministic', (material) => {
+    const spec = validSpecInput()
+    const bible = { ...spec.styleBible, material }
+    const hash = assetContentHash(spec.assets[0]!, bible)
+    expect(hash).not.toBe('784eaebd0e0bb79d')
+    expect(assetContentHash(spec.assets[0]!, structuredClone(bible))).toBe(hash)
+  })
+
+  it('uses different cache keys for different materials', () => {
+    const spec = validSpecInput()
+    const hashes = materials.map((material) => assetContentHash(spec.assets[0]!, { ...spec.styleBible, material }))
+    expect(new Set(hashes).size).toBe(materials.length)
+  })
+
+  it.each(materials)('invalidates %s assets when the final admin theme palette changes', (material) => {
+    const input = validSpecInput()
+    input.experience = { kind: 'admin', navigation: [], presentation: { appearance: 'soft-glass', decoration: 'balanced', shell: 'sidebar' } }
+    input.styleBible.material = material
+    const before = finalizeSpec(input)
+    input.theme.colorTokens.primary = '#123456'
+    const after = finalizeSpec(input)
+    expect(after.styleBible.material).toBe(material)
+    expect(after.assets[0]!.contentHash).not.toBe(before.assets[0]!.contentHash)
+  })
+
   it('is stable for identical input', () => {
     const spec = validSpecInput()
     const a = assetContentHash(spec.assets[0]!, spec.styleBible)

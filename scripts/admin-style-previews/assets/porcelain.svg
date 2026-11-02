@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="480" viewBox="0 0 720 480" role="img" aria-label="陶瓷咖啡杯本地示意，非 AI 成图">
+<defs><linearGradient id="cup" x2="1" y2="1"><stop stop-color="#FFFFFF"/><stop offset=".6" stop-color="#E6EFF7"/><stop offset="1" stop-color="#A9C2D8"/></linearGradient><linearGradient id="metal"><stop stop-color="#66798D"/><stop offset=".5" stop-color="#DCE8EF"/><stop offset="1" stop-color="#899DAE"/></linearGradient></defs>
+<ellipse cx="365" cy="371" rx="226" ry="38" fill="#356B9B" opacity=".1"/>
+<path d="M178 323 372 248 567 324 372 407Z" fill="#DCE7F0"/><path d="m178 323 194 75 195-74v14l-195 77-194-78Z" fill="#A7BECE"/>
+<ellipse cx="363" cy="318" rx="136" ry="38" fill="url(#cup)"/>
+<path d="M435 188c103-13 104 113 12 111" fill="none" stroke="url(#metal)" stroke-width="25"/>
+<path d="M258 178h198l-18 110c-11 52-151 52-163 0Z" fill="url(#cup)"/>
+<ellipse cx="357" cy="178" rx="99" ry="31" fill="#F9FCFF"/><ellipse cx="357" cy="181" rx="82" ry="23" fill="#765240"/><path d="M316 180c30-25 58-16 72 0-23 16-47 23-72 0Z" fill="#E6C9A4"/>
+<path d="M324 128c-29-26 23-37 3-66M379 126c-21-23 22-32 6-55" fill="none" stroke="#A9C2D8" stroke-width="9" stroke-linecap="round" opacity=".6"/>
+<ellipse cx="204" cy="285" rx="24" ry="15" transform="rotate(-28 204 285)" fill="url(#metal)"/><path d="m188 294 32-18" stroke="#66798D" stroke-width="3"/>
+</svg>

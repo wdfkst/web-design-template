@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseProjectSpecInput } from '@vudt/spec'
+import { ADMIN_STYLE_IDS, applyAdminStyle, finalizeSpec, parseProjectSpecInput, ProjectSpecSchema } from '@vudt/spec'
 import { deriveSpecInput } from '../draft.js'
 import { HeroSplit } from '../registry.js'
 
@@ -102,6 +102,31 @@ function failureOf(result: ReturnType<typeof deriveSpecInput>): string {
   if (result.ok) throw new Error('expected a failure')
   return result.feedback
 }
+
+it.each(ADMIN_STYLE_IDS)('retains %s reference and material through apply → derive → parse → finalize without changing geometry', id => {
+  const draft = {
+    meta: { name: '后台', description: '商品后台', targetStack: 'vue3' }, theme, styleBible,
+    experience: { kind: 'admin', navigation: [{ id: 'home', label: '首页', route: '/' }] },
+    collections: [{ id: 'items', label: '商品', model: { name: { type: 'string', label: '名称' } }, fields: ['name'] }],
+    pages: ['/', '/two', '/three'].map(route => ({ route, title: '首页', pageType: 'dashboard',
+      blocks: [contentBlock('AdminWelcomePanel', {}, { illustration: { prompt: 'coffee beans', alt: '咖啡豆' } })],
+      admin: { mode: 'workbench', collections: ['items'], shortcuts: [] },
+    })),
+  }
+  const original = okValue(deriveSpecInput(draft))
+  const applied = applyAdminStyle(draft, { id, version: 1 }, 42)
+  if (!applied.ok) throw new Error(applied.feedback)
+  const derived = okValue(deriveSpecInput(applied.value))
+  expect(derived.adminStyle).toEqual({ id, version: 1 })
+  expect(derived.assets).toEqual(original.assets)
+  expect(derived.pages).toEqual(original.pages)
+  const parsed = parseProjectSpecInput(derived)
+  if (!parsed.ok) throw new Error(JSON.stringify(parsed))
+  const finalized = finalizeSpec(parsed.value)
+  expect(ProjectSpecSchema.parse(finalized).adminStyle).toEqual({ id, version: 1 })
+  expect(finalized.styleBible.material).toBe(({ soft: 'soft-clay', warm: 'natural-paper', mist: 'frosted-glass', porcelain: 'porcelain-metal', aurora: 'aurora-optical' } as const)[id])
+  expect(finalized.assets.map(({ contentHash, ...asset }) => asset)).toEqual(original.assets)
+})
 
 describe('deriveSpecInput', () => {
   it('turns a draft into a spec the spec schema accepts', () => {

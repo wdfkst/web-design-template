@@ -11,7 +11,19 @@ const API_TARGET = 'http://127.0.0.1:4300'
  * makes that true in development.
  */
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), {
+    name: 'admin-style-preview-cors',
+    configureServer(server) {
+      // Opaque sandbox origins may read only the public, fixed preview assets.
+      server.middlewares.use((request, response, next) => {
+        const pathname = new URL(request.url ?? '/', 'http://localhost').pathname
+        if (pathname.startsWith('/admin-style-previews/')) {
+          response.setHeader('Access-Control-Allow-Origin', '*')
+        }
+        next()
+      })
+    },
+  }],
   resolve: {
     dedupe: ['vue'],
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },

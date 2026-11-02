@@ -20,7 +20,39 @@ describe('styleBiblePrefix', () => {
   })
 })
 
+const legacyPrefix = 'flat vector illustration, soft gradient shading, three quarter perspective, color palette #4f46e5, #0ea5e9, #f59e0b'
+const legacyTail = 'a developer at a desk. subject centered with even margins on all sides. isolated subject on a fully transparent background, no backdrop, no shadow plate'
+const legacyNegative = 'no text, no watermark, text, watermark, signature, ui chrome, borders, background, backdrop, ground shadow'
+const materialDescriptions = [
+  ['soft-clay', '柔软哑光黏土'],
+  ['natural-paper', '温润自然纸感手绘'],
+  ['frosted-glass', '磨砂半透明柔光'],
+  ['porcelain-metal', '白釉陶瓷与磨砂金属'],
+  ['aurora-optical', '半透明光学物体与克制极光'],
+] as const
+
 describe('buildPrompt', () => {
+  it('preserves the complete legacy provider request without material', () => {
+    const expected = { prompt: `${legacyPrefix}. ${legacyTail}`, negativePrompt: legacyNegative, seed: 1234 }
+    expect(buildPrompt(asset, bible)).toEqual(expected)
+    expect(buildPrompt(asset, { ...bible, material: undefined })).toEqual(expected)
+  })
+
+  it.each(materialDescriptions)('puts %s after the style prefix without changing subsequent constraints', (material, description) => {
+    const styled = { ...bible, material }
+    expect(buildPrompt(asset, styled)).toEqual({
+      prompt: `${legacyPrefix}. ${description}. ${legacyTail}`,
+      negativePrompt: legacyNegative,
+      seed: 1234,
+    })
+    expect(buildPrompt(asset, structuredClone(styled))).toEqual(buildPrompt(asset, styled))
+    expect(buildPrompt({ ...asset, transparent: false }, styled)).toEqual({
+      prompt: `${legacyPrefix}. ${description}. a developer at a desk. subject centered with even margins on all sides. subtle gradient background`,
+      negativePrompt: 'no text, no watermark, text, watermark, signature, ui chrome, borders',
+      seed: 1234,
+    })
+  })
+
   it('puts the style prefix before the asset subject', () => {
     const { prompt } = buildPrompt(asset, bible)
     expect(prompt.indexOf('flat vector illustration')).toBeLessThan(prompt.indexOf(asset.prompt))

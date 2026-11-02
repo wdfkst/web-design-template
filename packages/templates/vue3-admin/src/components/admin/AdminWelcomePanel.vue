@@ -2,10 +2,11 @@
 import { computed, ref, watch } from 'vue'
 import type { AdminPresentation } from '../../data/admin-config'
 import AdminMotif from './AdminMotif.vue'
+import { adminStyle } from '../../theme/presentation'
 export interface WelcomePanel { headline?: string; body?: string; assets?: Record<string, { src: string; alt: string; w: number; h: number }> }
 const props = defineProps<WelcomePanel & { presentation?: AdminPresentation }>()
 const failed = ref(false)
-const jelly = computed(() => props.presentation?.appearance === 'jelly')
+const jelly = computed(() => !adminStyle && props.presentation?.appearance === 'jelly')
 const decorated = computed(() => props.presentation?.decoration !== 'minimal')
 watch(() => props.assets?.illustration?.src, () => { failed.value = false })
 </script>

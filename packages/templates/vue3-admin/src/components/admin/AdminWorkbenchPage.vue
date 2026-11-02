@@ -11,7 +11,8 @@ import { evaluateWorkbenchModule } from '../../data/workbench'
 import AdminWorkbenchModule from './AdminWorkbenchModule.vue'
 type Config = WorkbenchConfig | { mode?: 'workbench'; collections: string[]; shortcuts: string[]; modules?: never }
 import AdminWelcomePanel, { type WelcomePanel } from './AdminWelcomePanel.vue'
-import { presentation } from '../../theme/presentation'
+import { presentation, styleLayout } from '../../theme/presentation'
+import AdminStyleWorkbench from './AdminStyleWorkbench.vue'
 const props = defineProps<{ title: string; emptyPanel?: EmptyPanel; welcomePanel?: WelcomePanel; config: Config }>()
 const router = useRouter()
 const ids = props.config.modules ? [...new Set(props.config.modules.flatMap(module => 'collection' in module ? [module.collection] : []))] : props.config.collections
@@ -20,7 +21,7 @@ const modules = computed(() => {
   const config = props.config
   if (!config.modules) return []
   const ordered = [...config.modules]
-  if (config.variant === 'focus') ordered.sort((a, b) => Number(b.id === config.primaryModuleId) - Number(a.id === config.primaryModuleId))
+  if (!styleLayout && config.variant === 'focus') ordered.sort((a, b) => Number(b.id === config.primaryModuleId) - Number(a.id === config.primaryModuleId))
   return ordered.map(module => {
     const source = 'collection' in module ? sources.find(item => item.definition.id === module.collection) : undefined
     const model = source?.definition.model ?? {}
@@ -38,7 +39,8 @@ const shortcuts = computed(() => (props.config.shortcuts ?? []).map(path => ({ p
   <AdminPage class="workbench-page" :title="title" description="查看业务记录概况，快速进入日常工作。">
     <AdminWelcomePanel v-if="welcomePanel && presentation?.decoration !== 'minimal'" v-bind="welcomePanel" :presentation="presentation" />
     <template v-if="config.modules">
-      <div v-if="compactOverview" class="workbench-overview">
+      <AdminStyleWorkbench v-if="styleLayout" :layout="styleLayout.workbenchLayout" :modules="modules" />
+      <div v-else-if="compactOverview" class="workbench-overview">
         <div v-if="summaryModules.length" class="summary-strip"><AdminWorkbenchModule v-for="item in summaryModules" :key="item.module.id" v-bind="item" /></div>
         <div v-if="recordModules.length || supportingModules.length" class="workbench-body" :class="{ 'has-records': recordModules.length, 'has-support': supportingModules.length }">
           <div v-if="recordModules.length" class="workbench-records"><AdminWorkbenchModule v-for="item in recordModules" :key="item.module.id" v-bind="item" /></div>

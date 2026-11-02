@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -723,6 +723,25 @@ describe('web console hosting', () => {
     expect(response.statusCode).toBe(200)
     expect(response.headers['content-type']).toBe('text/html; charset=utf-8')
     expect(response.body).toContain('console')
+  })
+
+  it('serves only static style previews with anonymous CORS and never falls back on missing preview assets', async () => {
+    const webDistDir = await makeWebDist()
+    await mkdir(join(webDistDir, 'admin-style-previews/soft/1/assets'), { recursive: true })
+    await writeFile(join(webDistDir, 'admin-style-previews/soft/1/assets/app.js'), 'export const ready = true')
+    const harness = await makeApp({ webDistDir })
+    track(harness)
+    const script = await harness.app.inject({ method: 'GET', url: '/admin-style-previews/soft/1/assets/app.js', headers: { origin: 'null' } })
+    expect(script.statusCode).toBe(200)
+    expect(script.headers['access-control-allow-origin']).toBe('*')
+    expect(script.headers['access-control-allow-credentials']).toBeUndefined()
+    const missing = await harness.app.inject({ method: 'GET', url: '/admin-style-previews/soft/1/assets/missing.js' })
+    expect(missing.statusCode).toBe(404)
+    expect(missing.body).not.toContain('<title>console</title>')
+    const root = await harness.app.inject({ method: 'GET', url: '/' })
+    expect(root.headers['access-control-allow-origin']).toBeUndefined()
+    const api = await harness.app.inject({ method: 'GET', url: '/tasks' })
+    expect(api.headers['access-control-allow-origin']).toBeUndefined()
   })
 
   it('falls back to index.html for a client route so deep links work', async () => {

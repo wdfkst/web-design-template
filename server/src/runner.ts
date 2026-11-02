@@ -1,5 +1,6 @@
 import { buildTask, WorkspaceRoot, type BuildLimits } from '@vudt/build'
 import type { ImageCache, ImageProcessor, ImageProvider } from '@vudt/imagegen'
+import { resolveAdminStyle } from '@vudt/spec'
 import { ServerError } from './errors.js'
 import type { EffectiveSettings } from './settings.js'
 import { draftSpec, type SpecDrafter } from './spec-source.js'
@@ -70,8 +71,12 @@ export async function runTask(taskId: string, deps: RunnerDeps): Promise<void> {
   const settings = task.settings ?? deps.settings
 
   try {
+    if (task.adminStyle !== undefined && resolveAdminStyle(task.adminStyle) === undefined) {
+      throw new ServerError(`unsupported admin style: ${task.adminStyle.id}@${task.adminStyle.version}`)
+    }
     const { spec, attempts } = await draftSpec(deps.drafter(settings.spec, onRequest), task.description, {
       maxAttempts: deps.specAttempts,
+      ...(task.adminStyle === undefined ? {} : { adminStyle: task.adminStyle }),
       onValidation: state => {
         if (state === 'started') phase('validation')
         else trace.event('validation', state, state === 'failed' ? '校验未通过，将反馈给下一次请求' : '结构校验通过')

@@ -1,5 +1,7 @@
 export * from './admin.js'
 export * from './admin-presentation.js'
+export * from './admin-style.js'
+export * from './admin-style-apply.js'
 export * from './admin-workbench.js'
 export * from './theme.js'
 export * from './style-bible.js'

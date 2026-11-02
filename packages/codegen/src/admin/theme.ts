@@ -1,4 +1,4 @@
-import type { ProjectSpec } from '@vudt/spec'
+import { resolveAdminStyle, type ProjectSpec } from '@vudt/spec'
 import { adminLiteral } from './page.js'
 
 function luminance(color: string): number {
@@ -32,13 +32,32 @@ function renderPersonalizedTheme(spec: ProjectSpec, radius: number): Record<stri
     return `${jelly}--admin-bg:${m.bg};--admin-surface:${m.surface};--admin-text:${m.text};--admin-muted:${m.muted};--admin-primary:${colors.primary};--admin-on-primary:${readable(colors.primary, '#ffffff')};--admin-border:color-mix(in srgb, ${m.text} 18%, ${m.surface});--admin-nav:${m.surface};--admin-nav-text:${m.text};--admin-overlay:#00000066;--admin-glass:color-mix(in srgb, ${m.surface} 86%, transparent);--admin-glow-a:${colors.primary};--admin-glow-b:${colors.secondary};--admin-glow-c:${colors.accent};--admin-radius:${Math.max(radius, 12)}px;--admin-space:${spacing === 'compact' ? 16 : spacing === 'relaxed' ? 28 : 24}px;--admin-shadow:0 16px 44px #000000${mode === 'dark' ? '30' : '10'};color-scheme:${mode};`
   }
   return {
-    'src/theme/presentation.ts': `import type { AdminPresentation } from '../data/admin-config'\nexport const presentation: AdminPresentation = ${adminLiteral(presentation)}\n`,
+    'src/theme/presentation.ts': `import type { AdminPresentation } from '../data/admin-config'\nexport const presentation: AdminPresentation = ${adminLiteral(presentation)}\nexport const adminStyle: import('./admin-style').AdminStyleReference | null = null\nexport const styleLayout: import('./admin-style').AdminStyleLayout | null = null\n`,
     'src/theme/tokens.ts': `import { theme } from 'ant-design-vue'\nimport type { ThemeConfig } from 'ant-design-vue/es/config-provider/context'\nimport './generated.css'\nexport const adminThemeMode: 'light' | 'dark' | 'both' = ${adminLiteral(spec.theme.mode)}\nexport const adminThemeModes: {light:ThemeConfig;dark:ThemeConfig} = {light:{algorithm:theme.defaultAlgorithm,token:${adminLiteral(token('light'))}},dark:{algorithm:theme.darkAlgorithm,token:${adminLiteral(token('dark'))}}}\nexport const adminTheme = adminThemeModes.${spec.theme.mode === 'dark' ? 'dark' : 'light'}\n`,
     'src/theme/generated.css': `:root{${css(spec.theme.mode === 'dark' ? 'dark' : 'light')}}\n:root[data-admin-mode="light"]{${css('light')}}\n:root[data-admin-mode="dark"]{${css('dark')}}\n`,
   }
 }
 
+function renderNamedTheme(spec: ProjectSpec): Record<string, string> {
+  const style = resolveAdminStyle(spec.adminStyle!)
+  if (!style) throw new Error('Unsupported admin style reference')
+  const { theme: definition, presentation, shellVariant, workbenchLayout, skin } = style
+  const c = definition.colorTokens
+  const mode = definition.mode === 'dark' ? 'dark' : 'light'
+  const radius = skin === 'soft' ? 24 : skin === 'porcelain' ? 20 : 12
+  const onPrimary = readable(c.primary, '#ffffff')
+  const error = mode === 'dark' ? '#FFB4AB' : '#A12730'
+  const token = { colorPrimary: c.primary, colorLink: c.primary, colorLinkHover: c.primary, colorPrimaryHover: c.primary, colorPrimaryActive: c.primary, colorBgBase: c.background, colorBgContainer: c.surface, colorText: c.foreground, colorTextSecondary: c.muted, colorTextPlaceholder: c.muted, colorTextLightSolid: onPrimary, colorError: error, borderRadius: radius, controlHeight: 36, fontSize: 14, fontFamily: definition.fontPair.body }
+  const css = `--admin-bg:${c.background};--admin-surface:${c.surface};--admin-text:${c.foreground};--admin-muted:${c.muted};--admin-primary:${c.primary};--admin-on-primary:${onPrimary};--admin-error:${error};--admin-focus:${c.primary};--admin-border:color-mix(in srgb, ${c.foreground} 20%, ${c.surface});--admin-nav:${c.surface};--admin-nav-text:${c.foreground};--admin-overlay:#00000066;--admin-radius:${radius}px;--admin-control-radius:${skin === 'soft' ? 999 : skin === 'porcelain' ? 12 : 8}px;--admin-space:24px;--admin-shadow:${skin === 'warm' ? '0 3px 0 #302E260A' : mode === 'dark' ? '0 16px 40px #00000030' : '0 12px 32px #25334110'};--admin-font:${definition.fontPair.body};color-scheme:${mode};`
+  return {
+    'src/theme/presentation.ts': `import type { AdminPresentation } from '../data/admin-config'\nimport type { AdminStyleReference, AdminStyleLayout } from './admin-style'\nexport const presentation: AdminPresentation = ${adminLiteral(presentation)}\nexport const adminStyle: AdminStyleReference = ${adminLiteral(spec.adminStyle)}\nexport const styleLayout: AdminStyleLayout = ${adminLiteral({ shellVariant, workbenchLayout, skin })}\n`,
+    'src/theme/tokens.ts': `import { theme } from 'ant-design-vue'\nimport type { ThemeConfig } from 'ant-design-vue/es/config-provider/context'\nimport './generated.css'\nexport const adminThemeMode: 'light' | 'dark' | 'both' = ${adminLiteral(mode)}\nexport const adminThemeModes: { light: ThemeConfig; dark: ThemeConfig } | undefined = undefined\nexport const adminTheme: ThemeConfig = { algorithm: theme.${mode === 'dark' ? 'darkAlgorithm' : 'defaultAlgorithm'}, token: ${adminLiteral(token)} }\n`,
+    'src/theme/generated.css': `:root{${css}}\n`,
+  }
+}
+
 export function renderAdminTheme(spec: ProjectSpec): Record<string, string> {
+  if (spec.adminStyle) return renderNamedTheme(spec)
   const colors = spec.theme.colorTokens
   const hex = colors.primary.length === 4 ? [...colors.primary.slice(1)].map(channel => channel + channel).join('') : colors.primary.slice(1)
   const channels = [0, 2, 4].map(offset => {
@@ -52,7 +71,7 @@ export function renderAdminTheme(spec: ProjectSpec): Record<string, string> {
   const presentation = spec.experience?.kind === 'admin' ? spec.experience.presentation : undefined
   if (presentation) return renderPersonalizedTheme(spec, radius)
   return {
-    'src/theme/presentation.ts': `import type { AdminPresentation } from '../data/admin-config'\nexport const presentation: AdminPresentation | undefined = undefined\n`,
+    'src/theme/presentation.ts': `import type { AdminPresentation } from '../data/admin-config'\nexport const presentation: AdminPresentation | undefined = undefined\nexport const adminStyle: import('./admin-style').AdminStyleReference | null = null\nexport const styleLayout: import('./admin-style').AdminStyleLayout | null = null\n`,
     'src/theme/tokens.ts': `import { theme } from 'ant-design-vue'\nimport type { ThemeConfig } from 'ant-design-vue/es/config-provider/context'\nimport { primaryTextColor } from './contrast'\nimport './generated.css'\nexport const adminThemeMode: 'light' | 'dark' | 'both' = ${adminLiteral(spec.theme.mode)}\nexport const adminThemeModes: { light: ThemeConfig; dark: ThemeConfig } | undefined = undefined\nexport const adminTheme: ThemeConfig = { algorithm: theme.${spec.theme.mode === 'dark' ? 'darkAlgorithm' : 'defaultAlgorithm'}, token: { ...${adminLiteral(token)}, colorTextLightSolid: primaryTextColor(${adminLiteral(colors.primary)}) } }\n`,
     'src/theme/generated.css': `:root {\n  --admin-bg: ${colors.background};\n  --admin-surface: ${colors.surface};\n  --admin-text: ${colors.foreground};\n  --admin-muted: ${colors.muted};\n  --admin-primary: ${colors.primary};\n  --admin-on-primary: ${onPrimary};\n  --admin-border: color-mix(in srgb, ${colors.foreground} 18%, ${colors.surface});\n  --admin-nav: ${colors.surface};\n  --admin-nav-text: ${colors.foreground};\n  --admin-overlay: #00000066;\n  color-scheme: ${spec.theme.mode === 'dark' ? 'dark' : 'light'};\n}\n`,
   }

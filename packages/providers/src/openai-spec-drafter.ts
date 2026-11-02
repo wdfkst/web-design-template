@@ -1,4 +1,5 @@
 import { BLOCK_REGISTRY } from '@vudt/blocks'
+import { resolveAdminStyle, type AdminStyleReference } from '@vudt/spec'
 import { adminExample } from './admin-example.js'
 import { observeRequest, type RequestObserver } from './request-observer.js'
 
@@ -7,6 +8,7 @@ export interface SpecDraftRequest {
   /** Validation feedback from the previous attempt, appended as its own turn. */
   feedback?: string
   attempt: number
+  adminStyle?: AdminStyleReference
 }
 
 /**
@@ -308,8 +310,23 @@ export function createOpenAISpecDrafter(options: OpenAISpecDrafterOptions): Spec
   return {
     name: `openai:${model}`,
     async draft(request: SpecDraftRequest): Promise<unknown> {
+      let styleContext = ''
+      if (request.adminStyle !== undefined) {
+        const style = resolveAdminStyle(request.adminStyle)
+        if (style === undefined) throw new Error(`unsupported admin style: ${request.adminStyle.id}@${request.adminStyle.version}`)
+        styleContext = [
+          '', 'Trusted user-selected admin style (overrides general visual recommendations and conflicting project description):',
+          'experience.kind must be admin. Plan existing supported business pages, collections, forms and navigation for the requested domain.',
+          'Keep all required draft fields, including theme and styleBible. The server enforces these visual settings; do not invent asset geometry or change style in asset subjects.',
+          JSON.stringify({
+            id: style.id, version: style.version, theme: style.theme,
+            presentation: style.presentation, artStyle: style.styleBible.artStyle,
+            material: style.material, shellVariant: style.shellVariant, workbenchLayout: style.workbenchLayout,
+          }),
+        ].join('\n')
+      }
       const messages = [
-        { role: 'system', content: system },
+        { role: 'system', content: system + styleContext },
         { role: 'user', content: userPrompt(request.description) },
       ]
       if (request.feedback !== undefined && request.feedback.trim() !== '') {

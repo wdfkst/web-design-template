@@ -10,7 +10,7 @@ import type { ProjectSpec, ProjectSpecInput } from './project-spec.js'
  * restyled project would silently reuse the old illustrations.
  */
 export function assetContentHash(asset: AssetInput, styleBible: StyleBible): string {
-  const payload = JSON.stringify([
+  const fields = [
     asset.purpose,
     asset.aspectRatio,
     asset.transparent,
@@ -24,7 +24,9 @@ export function assetContentHash(asset: AssetInput, styleBible: StyleBible): str
     styleBible.backgroundTreatment,
     styleBible.negativePrompt,
     styleBible.seed,
-  ])
+  ]
+  if (styleBible.material !== undefined) fields.push('material', styleBible.material)
+  const payload = JSON.stringify(fields)
   return createHash('sha256').update(payload).digest('hex').slice(0, 16)
 }
 

@@ -4,7 +4,10 @@ import { z } from 'zod'
  * The single source of truth for how every illustration in one project looks.
  * Each image prompt is built as: style bible prefix + that asset's own prompt.
  */
+export const StyleMaterialSchema = z.enum(['soft-clay', 'natural-paper', 'frosted-glass', 'porcelain-metal', 'aurora-optical'])
+
 export const StyleBibleSchema = z.object({
+  material: StyleMaterialSchema.optional(),
   artStyle: z.enum([
     'flat-vector',
     'isometric',

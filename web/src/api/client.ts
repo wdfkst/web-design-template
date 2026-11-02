@@ -1,3 +1,5 @@
+import type { AdminStyleId, AdminStyleReference } from '@vudt/spec'
+
 export type TaskStatus = 'queued' | 'drafting' | 'building' | 'ready' | 'failed'
 
 /** Statuses worth polling: everything else is terminal. */
@@ -20,6 +22,7 @@ export interface TaskView {
   error?: { message: string; detail?: string }
   /** Snapshot taken when the task was created; Task 9 renders it. */
   settings?: EffectiveSettings
+  adminStyle?: AdminStyleReference
 }
 
 export interface AssetView {
@@ -94,11 +97,11 @@ export function getTask(id: string): Promise<TaskView> {
   return request<TaskView>(`/tasks/${encodeURIComponent(id)}`)
 }
 
-export function createTask(description: string): Promise<TaskView> {
+export function createTask(description: string, adminStyleId?: AdminStyleId): Promise<TaskView> {
   return request<TaskView>('/tasks', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ description }),
+    body: JSON.stringify({ description, ...(adminStyleId === undefined ? {} : { adminStyleId }) }),
   })
 }
 

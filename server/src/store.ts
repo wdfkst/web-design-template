@@ -1,4 +1,4 @@
-import type { ProjectSpec } from '@vudt/spec'
+import type { AdminStyleReference, ProjectSpec } from '@vudt/spec'
 import type { EffectiveSettings } from './settings.js'
 import type { TaskObservability, TaskStage } from './task-observability.js'
 
@@ -10,6 +10,7 @@ export interface TaskRecord {
   ownerId: string | null
   status: TaskStatus
   description: string
+  adminStyle?: AdminStyleReference
   createdAt: number
   startedAt?: number
   finishedAt?: number
@@ -43,8 +44,11 @@ export class TaskStore {
   private readonly tasks = new Map<string, TaskRecord>()
 
   create(record: TaskRecord): TaskRecord {
-    this.tasks.set(record.id, record)
-    return record
+    const snapshot = record.adminStyle === undefined
+      ? record
+      : { ...record, adminStyle: { id: record.adminStyle.id, version: record.adminStyle.version } }
+    this.tasks.set(record.id, snapshot)
+    return snapshot
   }
 
   get(id: string): TaskRecord | undefined {

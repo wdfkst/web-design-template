@@ -7,6 +7,7 @@ import SpecTree from '../components/SpecTree.vue'
 import TaskTimeline from '../components/TaskTimeline.vue'
 import RequestInspector from '../components/RequestInspector.vue'
 import GenerationArtwork from '../components/GenerationArtwork.vue'
+import { adminStyleName } from '../components/adminStyleCatalog.js'
 import { useTaskPolling } from '../composables/useTaskPolling.js'
 import { useTaskObservability } from '../composables/useTaskObservability.js'
 import { ApiError, getSpec, type SpecView } from '../api/client.js'
@@ -48,6 +49,7 @@ function onSelectPage(nextRoute: string) { selectedRoute.value = nextRoute; sele
         <section class="studio-hero"><div class="studio-hero-content"><span class="studio-hero-label">需求 → 页面 → 可运行项目</span><h2>{{ title }}</h2><p class="studio-description">{{ task.description }}</p><div class="studio-hero-tags"><span>Vue 3</span><span>TypeScript</span><span>{{ task.status === 'ready' ? '可预览 · 可导出' : '真实执行记录' }}</span></div></div><GenerationArtwork /></section>
         <a-alert v-if="error" class="studio-inline-warning" type="warning" show-icon :message="error" />
         <a-alert v-if="task.error" class="studio-inline-warning" type="error" show-icon :message="task.error.message" :description="task.error.detail" />
+        <p v-if="task.adminStyle" data-testid="task-admin-style">后台风格：{{ adminStyleName(task.adminStyle.id) }} · v{{ task.adminStyle.version }}</p>
         <TaskTimeline :task="task" :events="trace?.events ?? []" :truncated="trace?.eventsTruncated ?? false" />
         <section class="studio-content-panel">
           <div class="studio-tabs" role="tablist" aria-label="项目内容"><button role="tab" :aria-selected="tab === 'preview'" @click="tab = 'preview'">◈ 项目预览</button><button role="tab" :aria-selected="tab === 'structure'" @click="tab = 'structure'">▤ 页面与图片</button><button role="tab" :aria-selected="tab === 'settings'" @click="tab = 'settings'">⚙ 配置快照</button></div>

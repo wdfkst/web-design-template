@@ -7,11 +7,19 @@ import type { TaskStatus, TaskView } from '../api/client.js'
 import { useNow } from '../composables/useNow.js'
 import { elapsedLabel, progressLabel } from '../components/taskProgress.js'
 import GenerationArtwork from '../components/GenerationArtwork.vue'
+import AdminStylePicker from '../components/AdminStylePicker.vue'
+import type { AdminStyleId } from '@vudt/spec'
 
 const router = useRouter()
 const { tasks, loading, error, start, submit } = useTaskList()
 const description = ref('')
 const submitting = ref(false)
+const styleEnabled = ref(false)
+const adminStyleId = ref<AdminStyleId>()
+function toggleStyle(event: Event) {
+  styleEnabled.value = (event.target as HTMLInputElement).checked
+  if (!styleEnabled.value) adminStyleId.value = undefined
+}
 
 // 全表 N 行共用这一个时钟；全是终态任务时它不推进，也就不会重渲染。
 const { now } = useNow(() => tasks.value.some((task) => ACTIVE_STATUSES.includes(task.status)))
@@ -49,12 +57,13 @@ const columns = [
   { title: '', key: 'actions', width: 100 },
 ]
 
-const canSubmit = computed(() => description.value.trim() !== '' && !submitting.value)
+const canSubmit = computed(() => description.value.trim() !== '' && !submitting.value && (!styleEnabled.value || adminStyleId.value !== undefined))
 
 async function onSubmit(): Promise<void> {
+  if (!canSubmit.value) return
   submitting.value = true
   try {
-    const created = await submit(description.value.trim())
+    const created = await submit(description.value.trim(), styleEnabled.value ? adminStyleId.value : undefined)
     if (created !== undefined) {
       description.value = ''
       await router.push(`/task/${created.id}`)
@@ -82,6 +91,9 @@ function formatTime(value: number): string {
           show-count
           placeholder="例如：一个库存管理后台，包含商品列表、库存筛选、新增与编辑表单、业务概览。使用清爽的蓝绿色，搭配仓储主题插画。也可以描述品牌网站或其他多页项目。"
         />
+        <label class="task-list__style-toggle"><input type="checkbox" aria-label="启用后台风格" :checked="styleEnabled" :disabled="submitting" @change="toggleStyle">选择后台风格 <span>仅用于后台管理系统，不启用则自由生成</span></label>
+        <AdminStylePicker v-if="styleEnabled" v-model="adminStyleId" :disabled="submitting" />
+        <p v-if="styleEnabled && !adminStyleId" role="status">请先选择一套后台风格，再开始生成。</p>
         <div class="studio-composer-footer"><span class="studio-muted">生成期间可查看真实进度与完整请求提示词。</span><a-button type="primary" size="large" :disabled="!canSubmit" :loading="submitting" @click="onSubmit">开始生成</a-button></div>
       </a-space>
     </section>
@@ -117,6 +129,9 @@ function formatTime(value: number): string {
 </template>
 
 <style scoped>
+.task-list__style-toggle { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+.task-list__style-toggle span { font-size: 12px; color: var(--studio-muted); }
+.task-list__style-toggle input:focus-visible { outline: 3px solid #296f7b; outline-offset: 3px; }
 .task-list__elapsed {
   margin-left: 8px;
   color: var(--studio-muted);
