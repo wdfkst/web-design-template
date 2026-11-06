@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { applyAdminStyle, finalizeSpec, ProjectSpecInputSchema } from '../../../packages/spec/src/index.js'
 import { deriveSpecInput } from '../../../packages/templates/blocks/src/index.js'
-import { createCoffeePreviewDraft } from '../fixture.js'
+import { createCoffeePreviewDraft, createCoffeePreviewRows } from '../fixture.js'
 import { buildAdminStylePreviews, publishPreviewBuild } from '../build.js'
 import { computeTemplateFingerprint, validatePreviewManifest } from '../manifest.js'
 
@@ -20,6 +20,18 @@ async function manifestFixture(dir: string) {
 }
 
 describe('coffee preview fixture', () => {
+  it('uses deterministic coffee samples with numeric editable prices and formatted display prices', () => {
+    const rows = createCoffeePreviewRows()
+    expect(rows).toEqual(createCoffeePreviewRows())
+    expect(rows.products).toHaveLength(6)
+    expect(rows.orders).toHaveLength(24)
+    expect(rows.products[0]).toMatchObject({ name: '燕麦拿铁', price: 32, displayPrice: '¥32.00', available: true })
+    expect(rows.orders[0]).toMatchObject({ name: '林女士', drink: '燕麦拿铁', amount: 32 })
+    expect(new Set(rows.orders.map(row => row.id)).size).toBe(24)
+    expect(rows.products.every(row => row.price >= 18 && row.price <= 42)).toBe(true)
+    rows.products[0]!.name = 'changed'
+    expect(createCoffeePreviewRows().products[0]!.name).toBe('燕麦拿铁')
+  })
   it('derives a deterministic complete admin project with usable routes and local illustration slots', () => {
     const draft = createCoffeePreviewDraft()
     expect(draft).toEqual(createCoffeePreviewDraft())
@@ -32,7 +44,10 @@ describe('coffee preview fixture', () => {
     expect(spec.pages.map(page => page.admin?.mode)).toEqual(['workbench', 'list', 'form', 'detail'])
     expect(spec.assets.length).toBeGreaterThan(0)
     expect(spec.collections?.map(collection => collection.id)).toEqual(['orders', 'products'])
-    expect(spec.pages[0]?.title).toContain('示例')
+    expect(spec.pages[0]?.title).toBe('咖啡工作台')
+    expect(draft.pages[0]!.blocks[0]!.props.headline).toBe('订单与商品概览')
+    expect(draft.pages[0]!.blocks[0]!.props.body).not.toContain('本地演示')
+    expect(spec.pages[0]?.admin).toMatchObject({ modules: [{}, { fields: ['name', 'displayPrice'] }] })
   })
 })
 

@@ -4,7 +4,7 @@
 .admin-layout[data-admin-style] :is(.workbench-module,.list-panel,.form-panel,.detail-panel,.record-cards>article,.welcome-panel,.empty-state){border:1px solid var(--admin-border);border-radius:var(--style-panel-radius);background:var(--admin-surface);color:var(--admin-text);box-shadow:var(--style-panel-shadow)}
 .admin-layout[data-admin-style] :is(.welcome-panel,.workbench-module){padding:24px}
 .admin-layout[data-admin-style] .welcome-panel .welcome-copy{border:0;padding-left:0}
-.admin-layout[data-admin-style] .welcome-panel h2{font-size:28px;letter-spacing:-.5px}
+.admin-layout[data-admin-style] .welcome-panel h2{font-size:22px;letter-spacing:0}
 .admin-layout[data-admin-style] .welcome-panel img{width:200px;height:200px}
 .admin-layout[data-admin-style] :is(.module-note,.module-meta,.simulation-note,.muted,.page-heading p,.ant-empty-description){color:var(--admin-muted)}
 .admin-layout[data-admin-style] :is(.ant-btn,.ant-input,.ant-input-affix-wrapper,.ant-select-selector,.ant-picker,.ant-pagination-item){border-radius:var(--admin-control-radius)}

@@ -65,7 +65,7 @@ const chromeless = computed(() => route.meta.chrome === false)
         </nav>
         <button v-if="!topNavigation" class="desktop-toggle" aria-label="折叠菜单" :aria-expanded="!collapsed" @click="collapsed = !collapsed"><AdminIcon :name="collapsed ? 'menu-unfold' : 'menu-fold'" /></button>
         <button class="mobile-toggle" aria-label="打开导航" :aria-expanded="mobileOpen" @click="mobileOpen = !mobileOpen"><AdminIcon :name="mobileOpen ? 'close' : 'menu'" /></button>
-        <nav aria-label="面包屑" class="breadcrumbs"><span>工作空间</span><span>/</span><RouterLink v-if="route.meta.parentRoute" :to="String(route.meta.parentRoute)">返回列表</RouterLink><span>{{ route.meta.title }}</span></nav>
+        <nav aria-label="面包屑" class="breadcrumbs"><span>工作空间</span><span>/</span><RouterLink v-if="route.meta.parentRoute" :to="String(route.meta.parentRoute)">{{ router.resolve(String(route.meta.parentRoute)).meta.title ?? '上级页面' }}</RouterLink><span>{{ route.meta.title }}</span></nav>
         <div v-if="auth" class="demo-user"><span>演示用户</span><button type="button" aria-label="退出登录" :disabled="signingOut" @click="signOut"><AdminIcon name="logout" /><span>退出</span></button></div>
       </header>
       <p v-if="!chromeless && logoutError" class="logout-error" role="alert">{{ logoutError }}</p>

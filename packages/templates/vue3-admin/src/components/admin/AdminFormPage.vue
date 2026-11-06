@@ -10,6 +10,7 @@ import AdminRecordFields from './AdminRecordFields.vue'
 import type { AdminFormConfig } from '../../data/admin-config'
 const props = defineProps<{ title: string; config: Omit<AdminFormConfig, 'mode'> & { mode?: 'form' } }>()
 const route = useRoute(), router = useRouter()
+const returnLabel = computed(() => `返回${router.resolve(props.config.returnRoute).meta.title ?? '列表'}`)
 const form = forms.find(item => item.id === props.config.form)!
 const collection = collections.find(item => item.id === form.collection)!
 const store = useAdminCollection(collection.id)
@@ -34,9 +35,9 @@ async function save() {
 </script>
 <template>
   <AdminPage :title="title" description="填写业务信息；演示数据刷新后重置。">
-    <template #actions><RouterLink :to="config.returnRoute">返回列表</RouterLink></template>
+    <template #actions><RouterLink :to="config.returnRoute">{{ returnLabel }}</RouterLink></template>
     <section class="form-panel">
-      <Empty v-if="editing && !record" description="记录不存在，请返回列表重新选择。" />
+      <Empty v-if="editing && !record" :description="`记录不存在，请${returnLabel}重新选择。`" />
       <Form v-else layout="vertical" @finish="save">
         <AdminRecordFields :form="form" :collection="collection" :values="values" :errors="errors" :editing="editing" :groups="config.variant === 'grouped' ? config.groups : undefined" />
         <Space><Button type="primary" @click="save">保存</Button><Button @click="router.push(config.returnRoute)">取消</Button></Space>
